@@ -1,0 +1,79 @@
+<html>
+
+  <head>
+    <title>Tree prototype</title>
+
+    <link href="tree.css" rel="stylesheet" type="text/css"/>
+  </head>
+
+<body>
+
+  <h1>Tree control prototype</h1>
+  
+  <div>Try dragging and dropping nodes within the tree.</div>
+
+  <button onclick="javascript:removeSelected()">Remove node</button>
+  <button onclick="javascript:renameSelected()">Rename node</button>
+
+  <div id="tree" style="position:absolute;left:10;width:300px;height:400px;border:1px solid black;overflow:auto">
+
+  </div>
+
+  <script type="text/javascript" src="tree.js"></script>
+
+  <script type="text/javascript">
+
+    var tm = new xw.controls.TreeModel(new xw.controls.TreeNode("Root"));
+
+    var abc = new xw.controls.TreeNode("ABC");
+    tm.getRoot().add(abc);
+
+    abc.add(new xw.controls.TreeNode("123", true));
+    abc.add(new xw.controls.TreeNode("456", true));
+
+    var def = new xw.controls.TreeNode("DEF");
+    tm.getRoot().add(def);
+
+    def.add(new xw.controls.TreeNode("xxx", true));
+    def.add(new xw.controls.TreeNode("yyy", true));
+    def.add(new xw.controls.TreeNode("zzz", true));
+
+    function selectNode(node)
+    {
+//      alert("selected " + node.value);
+    }
+
+    function nodeContext(event)
+    {
+      window.status = "Context";
+      Tree.util.cancelEventBubble(event);
+      return false;
+    }
+
+    function renderNode(node)
+    {
+      xw.controls.Tree.util.addEvent(node.contentCell, "contextmenu", nodeContext);
+    }
+
+    var t = new xw.controls.Tree("tree", tm);
+    t.renderer.onRender = renderNode;
+    t.paint();
+
+    t.onSelect = selectNode;
+
+    function removeSelected()
+    {
+      t.selectedNode.parent.remove(t.selectedNode);
+      t.repaintNode(t.selectedNode.parent);
+    }
+
+    function renameSelected()
+    {
+      t.selectedNode.value = "abc";
+      t.repaintNode(t.selectedNode);
+    }
+
+  </script>
+
+</body>
+</html>

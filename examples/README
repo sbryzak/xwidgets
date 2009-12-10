@@ -1,0 +1,10 @@
+Running the examples locally in Firefox
+=======================================
+
+Because of Firefox's restrictive default settings, you may receive a security 
+error when trying to load the examples.  To get around this, you need to modify
+Firefox's configuration by following these steps:
+
+1) type about:config in the address bar
+
+2) Find the setting security.fileuri.strict_origin_policy and change it to false.

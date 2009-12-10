@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<view xmlns="http://jboss.com/products/xwidgets">
+  <panel align="top" height="50">
+    <label value="top"/>
+  </panel>
+
+  <panel align="bottom" height="50">
+    <label value="bottom"/>
+  </panel>
+  
+  <panel align="left" width="50">
+    <label value="left"/>
+  </panel>  
+  
+  <panel align="right" width="50">
+    <label value="right"/>
+  </panel>    
+
+  <panel align="client" layout="border">
+    <panel align="left" width="120">
+      <label value="client:left"/>
+    </panel>
+    
+    <panel align="client">
+      <!--label value="client:client"/-->
+      
+      <panel align="top" height="60">
+       <label value="top"/>
+      </panel>
+      
+      <panel align="client">
+        <label value="client"/>
+      </panel>
+      
+    </panel>
+  </panel>
+</view>
