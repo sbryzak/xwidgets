@@ -5,6 +5,7 @@ xw.controls.Label = function()
   this.value = "";
   this.parent = null;
   this.control = null;
+  this.textNode = null;
   
   xw.controls.Label.prototype.setParent = function(parent)
   {
@@ -15,9 +16,10 @@ xw.controls.Label = function()
   {
     if (this.control == null)
     {
-      this.control = document.createTextNode(this.value);
-      // IE doesn't support setting random properties on text nodes
-      // this.control.widget = this;
+      this.control = document.createElement("span");
+      this.textNode = document.createTextNode(this.value);
+      this.control.appendChild(this.textNode);
+      this.control.widget = this;
       this.parent.appendChild(this.control);
     }       
   }

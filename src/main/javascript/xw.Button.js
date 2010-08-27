@@ -16,7 +16,7 @@ xw.controls.Button = function()
      {
        this.control = document.createElement("button");
        this.control.widget = this;
-       this.parent.control.appendChild(this.control);
+       this.parent.appendChild(this.control);
        var text = document.createTextNode(this.value);
        this.control.appendChild(text);       
        

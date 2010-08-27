@@ -1,9 +1,7 @@
-function Package(fullName)
-{
+function Package(fullName) {
   var pkg = window;
   var parts = fullName.split(".");
-  for (var i = 0; i < parts.length; i++)
-  {
+  for (var i = 0; i < parts.length; i++) {
     if (typeof pkg[parts[i]] == "undefined")
       pkg[parts[i]] = {};
     pkg = pkg[parts[i]]; 
@@ -15,8 +13,7 @@ Package("xw");
 /**
  * Browser info - based on Prototype JS
  */
-xw.Browser = function()
-{
+xw.Browser = function() {
   var ua = navigator.userAgent;
   var isOpera = Object.prototype.toString.call(window.opera) == '[object Opera]';
   return {
@@ -32,8 +29,7 @@ xw.Browser = function()
  * System Utils 
  */ 
 xw.Sys = {};
-xw.Sys.getObject = function(id)
-{
+xw.Sys.getObject = function(id) {
   if (document.getElementById && document.getElementById(id))
     return document.getElementById(id);
   else if (document.all && document.all(id))
@@ -44,16 +40,13 @@ xw.Sys.getObject = function(id)
     return false;  
 }
 
-xw.Sys.createHttpRequest = function(mimeType)
-{  
-  if (window.XMLHttpRequest)
-  {
+xw.Sys.createHttpRequest = function(mimeType) {  
+  if (window.XMLHttpRequest) {
     var req = new XMLHttpRequest();
     if (mimeType != null && req.overrideMimeType) req.overrideMimeType(mimeType);
     return req;
   }
-  else
-  {
+  else {
     return new ActiveXObject("Microsoft.XMLHTTP");
   }
 }  
@@ -61,21 +54,17 @@ xw.Sys.createHttpRequest = function(mimeType)
 /**
  * Asynchronously loads the javascript source from the specified url
  */
-xw.Sys.loadSource = function(url, callback)
-{
+xw.Sys.loadSource = function(url, callback) {
   var req = xw.Sys.createHttpRequest("text/plain");
   req.onreadystatechange = function() {
-    if (req.readyState == 4)
-    {
-      if (req.status == 200 || req.status == 0)
-      {
+    if (req.readyState == 4) {
+      if (req.status == 200 || req.status == 0) {
         var e = document.createElement("script");
         e.language = "javascript";
         e.text = req.responseText;
         e.type = "text/javascript";
         var head = document.getElementsByTagName("head")[0];
-        if (head == null)
-        {
+        if (head == null) {
           head = document.createElement("head");          
           var html = document.getElementsByTagName("html")[0];
           html.insertBefore(head, html.firstChild);          
@@ -84,8 +73,7 @@ xw.Sys.loadSource = function(url, callback)
         if (callback) callback();
       }
     }
-    else
-    {
+    else {
       //alert("There was an error processing your request.  Error code: " + req.status);
     }
   };
@@ -94,39 +82,31 @@ xw.Sys.loadSource = function(url, callback)
   req.send(null);
 }
 
-xw.Sys.isUndefined = function(value) 
-{ 
+xw.Sys.isUndefined = function(value) { 
   return value == null && value !== null; 
 }
 
-xw.Sys.arrayContains = function(arrayVal, value)
-{
-  for (var i = 0; i < arrayVal.length; i++)
-  {
+xw.Sys.arrayContains = function(arrayVal, value) {
+  for (var i = 0; i < arrayVal.length; i++) {
     if (arrayVal[i] == value) return true; 
   } 
   return false;
 }
 
-xw.Sys.capitalize = function(value)
-{
+xw.Sys.capitalize = function(value) {
   return value.substring(0, 1).toUpperCase() + value.substring(1, value.length); 
 }
 
-xw.Sys.chainEvent = function(ctl, eventName, eventFunc)
-{
-  if (ctl.addEventListener)
-  {
+xw.Sys.chainEvent = function(ctl, eventName, eventFunc) {
+  if (ctl.addEventListener) {
     // normal browsers like firefox, chrome and safari support this
     ctl.addEventListener(eventName, eventFunc, false);
   }
-  else if (ctl.attachEvent)
-  {
+  else if (ctl.attachEvent) {
     // irregular browsers such as IE don't support standard functions
     ctl.attachEvent("on" + eventName, eventFunc);
   }
-  else
-  {
+  else {
     // really old browsers
     // alert("your browser doesn't support adding event listeners");
   }
@@ -137,15 +117,12 @@ xw.Sys.chainEvent = function(ctl, eventName, eventFunc)
  *
  * TODO - probably need to fix this up for safari - use xw.Sys.getBorder() as an example
  */ 
-xw.Sys.getStyle = function(element, cssRule)
-{
+xw.Sys.getStyle = function(element, cssRule) {
 	var strValue = "";
-	if (document.defaultView && document.defaultView.getComputedStyle)
-	{
+	if (document.defaultView && document.defaultView.getComputedStyle) {
 		strValue = document.defaultView.getComputedStyle(element, "").getPropertyValue(cssRule);
 	}
-	else if (element.currentStyle)
-	{
+	else if (element.currentStyle) {
 		cssRule = cssRule.replace(/\-(\w)/g, function (strMatch, p1){
 			return p1.toUpperCase();
 		});
@@ -154,29 +131,23 @@ xw.Sys.getStyle = function(element, cssRule)
 	return strValue;
 }
 
-xw.Sys.getBorder = function(control)
-{
+xw.Sys.getBorder = function(control) {
   var border = {};
-  if (window.navigator.userAgent.indexOf('Safari') == -1)
-  {
-    if (control.currentStyle)
-    {
+  if (window.navigator.userAgent.indexOf('Safari') == -1) {
+    if (control.currentStyle) {
       border.top = parseInt(control.currentStyle.borderTopWidth);
       border.right = parseInt(control.currentStyle.borderRightWidth);
       border.bottom = parseInt(control.currentStyle.borderBottomWidth);
       border.left = parseInt(control.currentStyle.borderLeftWidth);
     } 
-    else 
-    {    
-      try
-      {
+    else {    
+      try {
         border.top = parseInt(getComputedStyle(control,null).getPropertyValue('border-top-width'));
         border.right = parseInt(getComputedStyle(control,null).getPropertyValue('border-right-width'));
         border.bottom = parseInt(getComputedStyle(control,null).getPropertyValue('border-bottom-width'));
         border.left = parseInt(getComputedStyle(control,null).getPropertyValue('border-left-width'));
       }
-      catch (e) // last resort
-      {
+      catch (e) { // last resort
         border.top = parseInt(control.style.borderTopWidth);
         border.right = parseInt(control.style.borderRightWidth);
         border.bottom = parseInt(control.style.borderBottomWidth);
@@ -184,8 +155,7 @@ xw.Sys.getBorder = function(control)
       }
     }
   } 
-  else 
-  {
+  else {
     border.top = parseInt(control.style.getPropertyValue('border-top-width'));
     border.right = parseInt(control.style.getPropertyValue('border-right-width'));
     border.bottom = parseInt(control.style.getPropertyValue('border-bottom-width'));
@@ -194,17 +164,14 @@ xw.Sys.getBorder = function(control)
   return border;
 }
 
-xw.Sys.parseXml = function(body)
-{
-  try
-  {
+xw.Sys.parseXml = function(body) {
+  try {
     var doc = new ActiveXObject("Microsoft.XMLDOM");
     doc.async = "false";
     doc.loadXML(body);
     return doc;
   }
-  catch (e)
-  {
+  catch (e) {
     var doc = new DOMParser().parseFromString(body, "text/xml");
     return doc;
   }
@@ -213,52 +180,42 @@ xw.Sys.parseXml = function(body)
 /**
  * A Map implementation
  */
-xw.Map = function()
-{
+xw.Map = function() {
   this.elements = new Array();
 
-  xw.Map.prototype.size = function()
-  {
+  xw.Map.prototype.size = function() {
     return this.elements.length;
   }
 
-  xw.Map.prototype.isEmpty = function()
-  {
+  xw.Map.prototype.isEmpty = function() {
     return this.elements.length == 0;
   }
 
-  xw.Map.prototype.keySet = function()
-  {
+  xw.Map.prototype.keySet = function() {
     var keySet = new Array();
     for (var i = 0; i < this.elements.length; i++)
       keySet[keySet.length] = this.elements[i].key;
     return keySet;
   }
 
-  xw.Map.prototype.values = function()
-  {
+  xw.Map.prototype.values = function() {
     var values = new Array();
     for (var i = 0; i < this.elements.length; i++)
       values[values.length] = this.elements[i].value;
     return values;
   }
 
-  xw.Map.prototype.get = function(key)
-  {
-    for (var i = 0; i < this.elements.length; i++)
-    {
+  xw.Map.prototype.get = function(key) {
+    for (var i = 0; i < this.elements.length; i++) {
       if (this.elements[i].key == key)
         return this.elements[i].value;
     }
     return null;
   }
 
-  xw.Map.prototype.put = function(key, value)
-  {
-    for (var i = 0; i < this.elements.length; i++)
-    {
-      if (this.elements[i].key == key)
-      {
+  xw.Map.prototype.put = function(key, value) {
+    for (var i = 0; i < this.elements.length; i++) {
+      if (this.elements[i].key == key) {
         this.elements[i].value = value;
         return;
       }
@@ -266,19 +223,15 @@ xw.Map = function()
     this.elements.push({key:key,value:value});
   }
 
-  xw.Map.prototype.remove = function(key)
-  {
-    for (var i = 0; i < this.elements.length; i++)
-    {
+  xw.Map.prototype.remove = function(key) {
+    for (var i = 0; i < this.elements.length; i++) {
       if (this.elements[i].key == key)
         this.elements.splice(i, 1);
     }
   }
 
-  xw.Map.prototype.contains = function(key)
-  {
-    for (var i = 0; i < this.elements.length; i++)
-    {
+  xw.Map.prototype.contains = function(key) {
+    for (var i = 0; i < this.elements.length; i++) {
       if (this.elements[i].key == key)
         return true;
     }
@@ -292,46 +245,36 @@ xw.Map = function()
 xw.ControlManager = {};
 xw.ControlManager.controls = new Array();
 xw.ControlManager.pendingControls = new Array();
-xw.ControlManager.initControl = function(controlName)
-{      
+xw.ControlManager.initControl = function(controlName) {      
   if (xw.Sys.isUndefined(xw.controls) ||
-     xw.Sys.isUndefined(eval("xw.controls." + controlName)))
-  {
+     xw.Sys.isUndefined(eval("xw.controls." + controlName))) {
     var url = xw.getResourceBase() + "xw." + xw.Sys.capitalize(controlName) + ".js";
     var callback = function() { xw.ControlManager.processPendingControls(); };
     xw.Sys.loadSource(url, callback);
   }  
 }
 
-xw.ControlManager.processPendingControls = function()
-{
-  if (xw.ControlManager.pendingControls.length > 0)
-  {
+xw.ControlManager.processPendingControls = function() {
+  if (xw.ControlManager.pendingControls.length > 0) {
     var controlName = xw.ControlManager.pendingControls.shift();
     xw.ControlManager.initControl(controlName);
   }
-  else
-  {
+  else {
     xw.ViewManager.signalControlsLoaded();
   }      
 }
 
-xw.ControlManager.loadControls = function(controls)
-{
-  for (var i = 0; i < controls.length; i++)
-  {
-    if (!xw.ControlManager.isControlLoaded(controls[i]))
-    {
+xw.ControlManager.loadControls = function(controls) {
+  for (var i = 0; i < controls.length; i++) {
+    if (!xw.ControlManager.isControlLoaded(controls[i])) {
       xw.ControlManager.pendingControls.push(controls[i]); 
     }    
   }
     
   xw.ControlManager.processPendingControls();
 }
-xw.ControlManager.isControlLoaded = function(controlName)
-{
-  for (var i = 0; i < xw.ControlManager.controls.length; i++)
-  {
+xw.ControlManager.isControlLoaded = function(controlName) {
+  for (var i = 0; i < xw.ControlManager.controls.length; i++) {
     if (xw.ControlManager.controls[i] == controlName) return true;
   }   
   return false;
@@ -341,8 +284,7 @@ xw.ControlManager.isControlLoaded = function(controlName)
  * View Loader - loads view definitions from a URL
  */
 xw.ViewLoader = {};
-xw.ViewLoader.load = function(viewName, callback)
-{
+xw.ViewLoader.load = function(viewName, callback) {
   var req = xw.Sys.createHttpRequest("text/xml");
   req.onreadystatechange = function() { callback(req) };
   req.open("GET", viewName, true);
@@ -353,8 +295,7 @@ xw.ViewLoader.load = function(viewName, callback)
 /**
  * Parses the XML view definition and creates a View instance
  */
-xw.ViewParser = function(viewRoot, container)
-{
+xw.ViewParser = function(viewRoot, container) {
   this.viewRoot = viewRoot;
   this.container = container;
   this.controls = new Array();
@@ -362,21 +303,17 @@ xw.ViewParser = function(viewRoot, container)
   /**
    * Parses the XML and builds a list of controls
    */
-  xw.ViewParser.prototype.parse = function()
-  {        
+  xw.ViewParser.prototype.parse = function() {        
     this.parseChildNodes(this.viewRoot.childNodes);    
   }
   
-  xw.ViewParser.prototype.parseChildNodes = function(elements)
-  {
-    for (var i = 0; i < elements.length; i++)
-    {
+  xw.ViewParser.prototype.parseChildNodes = function(elements) {
+    for (var i = 0; i < elements.length; i++) {
       var element = elements.item(i);    
       if (element.nodeType != 1) continue; // not an element
       if (element.tagName == "event") continue; // ignore events
       var controlName = xw.Sys.capitalize(element.tagName);                                
-      if (!xw.Sys.arrayContains(this.controls, controlName))
-      {
+      if (!xw.Sys.arrayContains(this.controls, controlName)) {
         this.controls.push(controlName);
       }        
       
@@ -384,51 +321,42 @@ xw.ViewParser = function(viewRoot, container)
     }
   }    
   
-  xw.ViewParser.prototype.createView = function()
-  {
+  xw.ViewParser.prototype.createView = function() {
     var view = new xw.View();
     view.container = this.container;     
     this.parseChildren(this.viewRoot.childNodes, view);
     return view;    
   }
   
-  xw.ViewParser.prototype.parseChildren = function(children, parentControl)
-  {
-    for (var i = 0; i < children.length; i++)
-    {      
+  xw.ViewParser.prototype.parseChildren = function(children, parentControl) {
+    for (var i = 0; i < children.length; i++) {      
       var element = children.item(i);
       if (element.nodeType != 1) continue; // not an element
       this.parseControl(element, parentControl);
     }       
   }
   
-  xw.ViewParser.prototype.parseControl = function(element, parentControl)
-  {    
+  xw.ViewParser.prototype.parseControl = function(element, parentControl) {    
     var tag = element.tagName;
     
-    if (tag == "event")
-    {
-      if (xw.Sys.isUndefined(parentControl.events))
-      {        
+    if (tag == "event") {
+      if (xw.Sys.isUndefined(parentControl.events)) {        
         parentControl.events = {};
       }
       xw.EventParser.parse(element, parentControl.events);
     }
-    else
-    {            
+    else {            
       var controlName = xw.Sys.capitalize(tag);
       var control = new xw.controls[controlName]();
       control.parent = parentControl;
       
-      if (xw.Sys.isUndefined(parentControl.children))
-      {
+      if (xw.Sys.isUndefined(parentControl.children)) {
         parentControl.children = new Array();
       }
       parentControl.children.push(control);
       
       // Set control properties
-      for (var i = 0; i < element.attributes.length; i++)
-      {
+      for (var i = 0; i < element.attributes.length; i++) {
         var name = element.attributes[i].name;
         var value = element.getAttribute(name);
         control[name] = value;
@@ -440,11 +368,9 @@ xw.ViewParser = function(viewRoot, container)
 }
 
 xw.EventParser = {};
-xw.EventParser.parse = function(element, events)
-{
+xw.EventParser.parse = function(element, events) {
   var eventType = element.getAttribute("type");
-  for (var i = 0; i < element.childNodes.length; i++)
-  {
+  for (var i = 0; i < element.childNodes.length; i++) {
     var child = element.childNodes.item(i);
     if (child.nodeType != 1) continue; // not an element
     if (child.tagName != "action") continue; // not an action
@@ -453,8 +379,7 @@ xw.EventParser.parse = function(element, events)
     // get all the text content of the action node, textContent would be
     // easier but IE doesn't support that
     var actionScript = "";
-    for (var j = 0; j < child.childNodes.length; j++)
-    {
+    for (var j = 0; j < child.childNodes.length; j++) {
       var grandChild = child.childNodes[j];
       var nodeType = grandChild.nodeType;
       if (nodeType != 3 && nodeType != 4) continue; // not TEXT or CDATA
@@ -475,32 +400,33 @@ xw.ViewManager.viewCache = {};
 xw.ViewManager.pendingViews = new Array();
 xw.ViewManager.loadViewCallback = function(req, viewName, container)
 {  
-  if (req.readyState == 4)
-  {
-    if (req.status == 200 || req.status == 0)
-    {
+  if (req.readyState == 4) {
+    if (req.status == 200 || req.status == 0) {
       var viewRoot;
       if (req.responseXml) viewRoot = req.responseXML.documentElement;
-      else viewRoot = xw.Sys.parseXml(req.responseText).documentElement;
-      
-      if (viewRoot.tagName == "view")
-      {
-        xw.ViewManager.createView(viewRoot, container);
+      else if (req.responseText && req.responseText.length > 0) {
+        viewRoot = xw.Sys.parseXml(req.responseText).documentElement;
       }
-      else
-      {
-        alert("Invalid view definition - document root is not 'view' element");
-      }           
+      
+      if (viewRoot) {
+        if (viewRoot.tagName == "view") {       
+          xw.ViewManager.createView(viewRoot, container);
+        }
+        else {
+          alert("Invalid view definition - document root '" + viewRoot.tagName + "' must be a 'view' element");
+        }    
+      }
+      else {
+        alert("No view data received.  If you are loading from the local file system, the security model of some browsers (such as Chrome) might not support this.");
+      }
     }
-    else
-    {
+    else {
       alert("There was an error processing your request.  Error code: " + req.status);
     }
   }  
 }
 
-xw.ViewManager.createView = function(viewRoot, container)
-{
+xw.ViewManager.createView = function(viewRoot, container) {
   var parser = new xw.ViewParser(viewRoot, container);
   parser.parse();
   
@@ -510,27 +436,22 @@ xw.ViewManager.createView = function(viewRoot, container)
   xw.ControlManager.loadControls(parser.controls);
 }
 
-xw.ViewManager.signalControlsLoaded = function()
-{
-  if (xw.ViewManager.pendingViews.length > 0)
-  {
+xw.ViewManager.signalControlsLoaded = function() {
+  if (xw.ViewManager.pendingViews.length > 0) {
     var parser = xw.ViewManager.pendingViews.shift();
     parser.createView().paint(); 
   }   
 }
 
-xw.ViewManager.openView = function(viewName, container)
-{
+xw.ViewManager.openView = function(viewName, container) {
   // If we haven't previously loaded the view, do it now
-  if (xw.Sys.isUndefined(xw.ViewManager.viewCache[viewName]))
-  {
+  if (xw.Sys.isUndefined(xw.ViewManager.viewCache[viewName])) {
     var callback = function(req) { 
       xw.ViewManager.loadViewCallback(req, viewName, container); 
     };
     xw.ViewLoader.load(viewName, callback); 
   }
-  else
-  {
+  else {
     xw.ViewLoader.createView(xw.ViewManager.viewCache[viewName], container);
   }
 }
@@ -538,25 +459,20 @@ xw.ViewManager.openView = function(viewName, container)
 /**
  * Base class for controls - TODO implement control inheritance
  */
-xw.Control = function()
-{
+xw.Control = function() {
   this.parent = null;
   this.children = new Array(); 
   
-  xw.Control.prototype.setParent = function(parent)
-  {
+  xw.Control.prototype.setParent = function(parent) {
     this.parent = parent;
   }
 }
 
-xw.Action = function()
-{
+xw.Action = function() {
   this.script = null;
   
-  xw.Action.prototype.invoke = function()
-  {
-    if (!xw.Sys.isUndefined(this.script))
-    {
+  xw.Action.prototype.invoke = function() {
+    if (!xw.Sys.isUndefined(this.script)) {
       return eval(this.script);
     }
   }
@@ -565,36 +481,30 @@ xw.Action = function()
 /**
  * Defines the physical bounds of a control
  */
-xw.Bounds = function(top, left, height, width)
-{
+xw.Bounds = function(top, left, height, width) {
   this.top = top;
   this.left = left;
   this.height = height;
   this.width = width;
   this.style = new Object();
   
-  xw.Bounds.prototype.getTop = function()
-  {
+  xw.Bounds.prototype.getTop = function() {
     return this.top;
   }
   
-  xw.Bounds.prototype.getLeft = function()
-  {
+  xw.Bounds.prototype.getLeft = function() {
     return this.left;
   }
   
-  xw.Bounds.prototype.getHeight = function()
-  {
+  xw.Bounds.prototype.getHeight = function() {
     return this.height;
   }
   
-  xw.Bounds.prototype.getWidth = function()
-  {
+  xw.Bounds.prototype.getWidth = function() {
     return this.width;
   }    
   
-  xw.Bounds.prototype.addStyleProperty = function(property, value)
-  {
+  xw.Bounds.prototype.addStyleProperty = function(property, value) {
     this.style[property] = value;
     return this;
   }
@@ -602,29 +512,23 @@ xw.Bounds = function(top, left, height, width)
 
 /** LAYOUT MANAGERS **/
 
-xw.DefaultLayout = function(container)
-{
+xw.DefaultLayout = function(container) {
   this.container = container;
   
-  xw.DefaultLayout.prototype.layout = function()
-  {
-    if (this.container.children)
-    {
-      for (var i = 0; i < this.container.children.length; i++)
-      {
+  xw.DefaultLayout.prototype.layout = function() {
+    if (this.container.children) {
+      for (var i = 0; i < this.container.children.length; i++) {
         this.container.children[i].paint();
       }
     }
   }
 }
 
-xw.BorderLayout = function(container)
-{
+xw.BorderLayout = function(container) {
   this.container = container;
   this.bounds = new xw.Map();
     
-  xw.BorderLayout.prototype.layout = function()
-  {      
+  xw.BorderLayout.prototype.layout = function() {      
     // TODO - support percentage widths
   
     // TODO invert this somehow
@@ -636,8 +540,7 @@ xw.BorderLayout = function(container)
     var rightControls = new Array();
     var clientControls = new Array();       
 
-    for (var i = 0; i < this.container.children.length; i++)
-    {
+    for (var i = 0; i < this.container.children.length; i++) {
       var child = this.container.children[i];
       if ("top" == child.align) topControls.push(child);
       else if ("bottom" == child.align) bottomControls.push(child);
@@ -651,8 +554,7 @@ xw.BorderLayout = function(container)
     var leftSpace = 0;
     var rightSpace = 0;
     
-    for (var i = 0; i < topControls.length; i++)
-    {
+    for (var i = 0; i < topControls.length; i++) {
       var bounds = new xw.Bounds(null, null, topControls[i].height, null)
         .addStyleProperty("position", "absolute")
         .addStyleProperty("top", topSpace + "px")
@@ -663,8 +565,7 @@ xw.BorderLayout = function(container)
       topSpace += 1.0 * topControls[i].height;
     }
     
-    for (var i = 0; i < bottomControls.length; i++)
-    {
+    for (var i = 0; i < bottomControls.length; i++) {
       var bounds = new xw.Bounds(null, null, bottomControls[i].height, null)
         .addStyleProperty("position","absolute")
         .addStyleProperty("bottom", bottomSpace)
@@ -675,8 +576,7 @@ xw.BorderLayout = function(container)
       bottomSpace += 1.0 * bottomControls[i].height;          
     }
     
-    for (var i = 0; i < leftControls.length; i++)
-    {
+    for (var i = 0; i < leftControls.length; i++) {
       this.bounds.put(leftControls[i], new xw.Bounds(null, null, null, leftControls[i].width)
         .addStyleProperty("position", "absolute")
         .addStyleProperty("left", leftSpace + "px")
@@ -686,8 +586,7 @@ xw.BorderLayout = function(container)
       leftSpace += 1.0 * leftControls[i].width;        
     }
     
-    for (var i = 0; i < rightControls.length; i++)
-    {
+    for (var i = 0; i < rightControls.length; i++) {
       this.bounds.put(rightControls[i], new xw.Bounds(null, null, null, rightControls[i].width)
         .addStyleProperty("position", "absolute")
         .addStyleProperty("right", rightSpace + "px")
@@ -697,8 +596,7 @@ xw.BorderLayout = function(container)
       rightSpace += 1.0 * rightControls[i].width;
     }
     
-    for (var i = 0; i < clientControls.length; i++)
-    {
+    for (var i = 0; i < clientControls.length; i++) {
       this.bounds.put(clientControls[i], new xw.Bounds(null, null, null, null)
         .addStyleProperty("position", "absolute")
         .addStyleProperty("left", leftSpace + "px")
@@ -708,26 +606,24 @@ xw.BorderLayout = function(container)
       );    
     }
   
-    for (var i = 0; i < this.container.children.length; i++)
-    {
+    for (var i = 0; i < this.container.children.length; i++) {
       this.container.children[i].paint(this); 
     }
   }
   
-  xw.BorderLayout.prototype.getBounds = function(ctl)
-  {
+  xw.BorderLayout.prototype.getBounds = function(ctl) {
     return this.bounds.get(ctl);
   }  
 }
 
 xw.layoutManagers = new Object();
+xw.layoutManagers["default"] = xw.DefaultLayout;
 xw.layoutManagers["border"] = xw.BorderLayout;
 
 /**
  * A single instance of a view
  */
-xw.View = function()
-{
+xw.View = function() {
   this.container = null;  
   this.children = new Array();
   
@@ -737,21 +633,18 @@ xw.View = function()
   /**
    * Callback for window resize events
    */
-  xw.View.prototype.resize = function()
-  {
+  xw.View.prototype.resize = function() {
     // bubble the resize event through the component tree
   }  
   
-  xw.View.prototype.setLayout = function(layout)
-  {
+  xw.View.prototype.setLayout = function(layout) {
     if ("string" == (typeof layout))
       this.layoutManager = new xw.layoutManagers[layout](this);
     else
       this.layoutManager = layout;
   }
   
-  xw.View.prototype.paint = function()
-  {       
+  xw.View.prototype.paint = function() {       
     // Determine the container control
     if ("string" == (typeof this.container))
       this.control = xw.Sys.getObject(this.container);
@@ -768,13 +661,11 @@ xw.View = function()
     this.layoutManager.layout();            
   }  
   
-  xw.View.prototype.appendChild = function(child)
-  {
+  xw.View.prototype.appendChild = function(child) {
     this.control.appendChild(child);
   }
   
-  xw.View.prototype.getContainingControl = function()
-  {
+  xw.View.prototype.getContainingControl = function() {
     return this.control;
   }
 }
@@ -786,17 +677,14 @@ xw.View = function()
 /**
  * Opens a view in the specified container - this call is asynchronous
  */ 
-xw.openView = function(viewName, container)
-{
+xw.openView = function(viewName, container) {
   xw.ViewManager.openView(viewName, container);
 }
 
-xw.setResourceBase = function(resourceBase)
-{
+xw.setResourceBase = function(resourceBase) {
   xw.resourceBase = resourceBase;
 }
 
-xw.getResourceBase = function()
-{
+xw.getResourceBase = function() {
   return xw.Sys.isUndefined(xw.resourceBase) ? "" : xw.resourceBase + "/";
 }
