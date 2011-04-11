@@ -10,6 +10,14 @@
         </action>
       </event>
     </button>
+    
+    <button value="Change label">
+      <event type="onclick">
+        <action type="script">
+          <![CDATA[arguments[0].parent.children[0].setValue('foo');]]>
+        </action>
+      </event>
+    </button>
   </panel>
 
 </view>
