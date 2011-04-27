@@ -102,7 +102,7 @@ xw.Sys.newInstance = function(name) {
     current = current[parts[i]];
   }
   return new current[constructorName]();
-}
+};
 
 xw.Sys.isUndefined = function(value) {
   return value == null && value !== null;
@@ -118,7 +118,7 @@ xw.Sys.classExists = function(fqcn) {
   }
   
   return eval("typeof " + fqcn) === "function";
-}
+};
 
 xw.Sys.arrayContains = function(arrayVal, value) {
   var i;
@@ -151,7 +151,6 @@ xw.Sys.chainEvent = function(ctl, eventName, eventFunc) {
 
 //
 // Returns the specified style for an element
-// + " == 'function'");
 // TODO - probably need to fix this up for safari - use xw.Sys.getBorder() as an example
 //
 xw.Sys.getStyle = function(element, cssRule) {
@@ -791,6 +790,10 @@ xw.Widget = function() {
   
   xw.Widget.prototype.setParent = function(parent) {
     this.parent = parent;
+  };
+  
+  xw.Widget.prototype.render = function() {
+    alert("Error - this widget must provide an implementation of the render() method");
   };
 };
 

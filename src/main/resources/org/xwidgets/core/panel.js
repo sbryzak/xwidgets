@@ -15,10 +15,6 @@ org.xwidgets.core.Panel = function() {
   this.layoutManager = null;
   
   org.xwidgets.core.Panel.prototype = new xw.Widget();
-    
-  org.xwidgets.core.Panel.prototype.setParent = function(parent) {
-    this.parent = parent;
-  };
   
   org.xwidgets.core.Panel.prototype.setAlign = function(align) {
     this.align = align;
@@ -36,8 +32,7 @@ org.xwidgets.core.Panel = function() {
   // Render the panel
   // 
   org.xwidgets.core.Panel.prototype.render = function(container) {
-    if (this.control == null)
-    {
+    if (this.control == null) {
       this.control = document.createElement("div");
       this.control.widget = this;              
       this.control.style.backgroundColor = "#ece9d6";
@@ -51,11 +46,10 @@ org.xwidgets.core.Panel = function() {
       this.control.style.padding = "0px";
       this.control.style.margin = "0px";
        
-      if (this.layout != null) {
-        var bounds = this.layout.getBounds(this);
+      if (parent.layout != null) {
+        var bounds = parent.layout.getBounds(this);
         if (bounds != null) this.applyBounds(bounds);
-      }
-      else {
+      } else {
         this.control.style.width = this.width;
         this.control.style.height = this.height;         
         this.control.style.display = "inline";
@@ -77,21 +71,15 @@ org.xwidgets.core.Panel = function() {
     // Create the appropriate layout manager and layout the child controls
     if (this.layoutManager == null && this.layout != null) {
       this.layoutManager = new xw.layoutManagers[this.layout](this);  
-    }
-    else {
+    } else {
       this.layoutManager = new xw.BorderLayout(this);
     }
       
-    this.layoutManager.layout(container, this.children);           
+    this.layoutManager.layout(this.inner, this.children);           
   };  
   
   org.xwidgets.core.Panel.prototype.appendChild = function(child) {
     this.inner.appendChild(child);
-  };
-  
-  // TODO this has *got* to be renamed
-  org.xwidgets.core.Panel.prototype.getContainingControl = function() {
-    return this.inner;
   };
   
   org.xwidgets.core.Panel.prototype.applyBounds = function(bounds) {  
@@ -120,4 +108,4 @@ org.xwidgets.core.Panel = function() {
       }
     }
   }; 
-}
+};

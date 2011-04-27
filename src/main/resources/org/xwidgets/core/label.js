@@ -2,13 +2,10 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Label = function() {
   this.value = "";
-  this.parent = null;
   this.control = null;
   this.textNode = null;
   
-  org.xwidgets.core.Label.prototype.setParent = function(parent) {
-    this.parent = parent;
-  };
+  org.xwidgets.core.Label.prototype = new xw.Widget();
   
   org.xwidgets.core.Label.prototype.render = function(container) {
     if (this.control == null)
