@@ -473,6 +473,7 @@ xw.ViewManager.parseChildren = function(childNodes, parentWidget) {
     var c = childNodes[i];
     if (c instanceof xw.WidgetNode) {
       var widget = xw.Sys.newInstance(c.fqwn);
+      widget.setParent(parentWidget);
       
       for (var p in c.attributes) {
         widget[p] = c.attributes[p]; 
@@ -583,16 +584,7 @@ xw.WidgetManager.loadPendingWidgets = function() {
   if (xw.WidgetManager.pendingWidgets.length > 0) {
     var fqwn = xw.WidgetManager.pendingWidgets.shift();
     var url = xw.getResourceBase() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
-    
-    var callback = function() {
-      // We're forced to do this because some browsers are buggy (I'm looking at YOU Firefox!)
-      // when it comes to initializing functions defined by dynamically imported JavaScript
-      xw.Sys.newInstance(fqwn);
-      
-      xw.WidgetManager.loadPendingWidgets();
-    };
-    
-    xw.Sys.loadSource(url, callback);    
+    xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);    
   } else {
     // Render any pending views
     while (xw.WidgetManager.pendingViews.length > 0) {
@@ -604,67 +596,13 @@ xw.WidgetManager.loadPendingWidgets = function() {
 };
   
 //
-// A single instance of a view
-//
-xw.View = function() {
-  this.children = [];
-
-  this.layout = null;
-  
-  // The container control
-  this.container = null;
-
-  //
-  // Callback for window resize events
-  //
-  xw.View.prototype.resize = function() {
-    // bubble the resize event through the component tree
-  };
-
-  xw.View.prototype.setLayout = function(layout) {
-    if ("string" === (typeof layout)) {
-      this.layoutManager = new xw.layoutManagers[layout](this);
-    } else {
-      this.layoutManager = layout;
-    }
-  };
-
-  xw.View.prototype.render = function(container) {
-    var i;
-    
-    // Determine the container control
-    this.container = ("string" === (typeof container)) ? xw.Sys.getObject(container) : container;
-
-    // Set the window resize callback so that we can respond to resize events
-    var target = this;
-    var callback = function() { target.resize(); };
-    xw.Sys.chainEvent(window, "resize", callback);
-
-    // Create the appropriate layout manager and layout the child controls
-    if (this.layout !== null) {
-      // TODO set the layoutManager based on the value of layout
-      this.layoutManager = new xw.BorderLayout();
-      this.layoutManager.layout(this.container, this.children);
-    }    
-    
-    for (i = 0; i < this.children.length; i++) {
-      this.children[i].render(this.container);
-    }
-  };
-
-  xw.View.prototype.appendChild = function(child) {
-    this.container.appendChild(child);
-  };
-};
-
-//
 // LAYOUT MANAGERS
 //
 
 xw.BorderLayout = function() {
   this.bounds = new xw.Map();
 
-  xw.BorderLayout.prototype.layout = function(container, widgets) {
+  xw.BorderLayout.prototype.calculateLayout = function(widgets) {
     var i;
     var controls = {      
       top: [],
@@ -786,16 +724,80 @@ xw.Bounds = function(top, left, height, width) {
 //
 xw.Widget = function() {
   this.parent = null;
-  this.children = [];
-  
-  xw.Widget.prototype.setParent = function(parent) {
-    this.parent = parent;
-  };
-  
-  xw.Widget.prototype.render = function() {
-    alert("Error - this widget must provide an implementation of the render() method");
-  };
+  this.children = [];  
 };
+
+xw.Widget.prototype.setParent = function(parent) {
+  this.parent = parent;
+};
+
+xw.Widget.prototype.render = function() {
+  alert("Error - this widget must provide an implementation of the render() method");
+};
+
+xw.Container = function() {
+  // FIXME hard coded the layout for now
+  this.layout = new xw.BorderLayout();
+}
+
+xw.Container.prototype.setLayout = function(layoutName) {
+  //this.layout = 
+  
+  // TODO rewrite this
+  //if ("string" === (typeof layout)) {
+//    this.layoutManager = new xw.layoutManagers[layout](this);
+//  } else {
+    //this.layoutManager = layout;
+  //}  
+}
+
+xw.Container.prototype = new xw.Widget();
+
+//
+// A single instance of a view
+//
+xw.View = function() {  
+  // The container control
+  this.container = null;
+  
+  delete this.parent;
+};
+
+xw.View.prototype = new xw.Container();
+
+//
+// Callback for window resize events
+//
+xw.View.prototype.resize = function() {
+  // bubble the resize event through the component tree
+};
+
+xw.View.prototype.render = function(container) {
+  var i;
+  
+  // Determine the container control
+  this.container = ("string" === (typeof container)) ? xw.Sys.getObject(container) : container;
+
+  // Set the window resize callback so that we can respond to resize events
+  var target = this;
+  var callback = function() { target.resize(); };
+  xw.Sys.chainEvent(window, "resize", callback);
+
+  // Create the appropriate layout manager and layout the child controls
+  if (this.layout !== null) {
+    //this.layoutManager = new xw.BorderLayout();
+    this.layout.calculateLayout(this.children);
+  }    
+  
+  for (i = 0; i < this.children.length; i++) {
+    this.children[i].render(this.container);
+  }
+};
+
+xw.View.prototype.appendChild = function(child) {
+  this.container.appendChild(child);
+};
+
 
 //
 // GENERAL METHODS
