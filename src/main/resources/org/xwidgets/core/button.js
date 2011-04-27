@@ -1,18 +1,16 @@
-Package("xw.controls");
+package("org.xwidgets.core");
 
-xw.controls.Button = function() {
+org.xwidgets.core.Button = function() {
   this.control = null;
   this.value = null;
-  
-  xw.controls.Button.prototype.setParent = function(parent) {
-    this.parent = parent;
-  }
-  
-  xw.controls.Button.prototype.paint = function() {
+
+  org.xwidgets.core.Button.prototype = new xw.Widget();
+    
+  org.xwidgets.core.Button.prototype.render = function(container) {
      if (this.control == null) {
        this.control = document.createElement("button");
        this.control.widget = this;
-       this.parent.appendChild(this.control);
+       container.appendChild(this.control);
        var text = document.createTextNode(this.value);
        this.control.appendChild(text);       
        

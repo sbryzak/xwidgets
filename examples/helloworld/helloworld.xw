@@ -1,23 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<view xmlns="http://jboss.com/products/xwidgets">
-  <panel align="client">
-    <label value="Hello World!"/>
+<xw:view xmlns="http://www.w3.org/1999/xhtml" xmlns:xw="http://xwidgets.org/core">
+  <xw:panel align="client">
+    <xw:label value="Hello World!"/>
     
-    <button value="Click me!">
-      <event type="onclick">
-        <action type="script">
+    <xw:button value="Click me!">
+      <xw:event type="onclick">
+        <xw:action type="script">
           <![CDATA[alert("Hi there!");]]>
-        </action>
-      </event>
-    </button>
+        </xw:action>
+      </xw:event>
+    </xw:button>
     
-    <button value="Change label">
-      <event type="onclick">
-        <action type="script">
+    <xw:button value="Change label">
+      <xw:event type="onclick">
+        <xw:action type="script">
           <![CDATA[arguments[0].parent.children[0].setValue('foo');]]>
-        </action>
-      </event>
-    </button>
-  </panel>
+        </xw:action>
+      </xw:event>
+    </xw:button>
+    
+    <p>
+      Here's a paragraph of plain ol' <b>HTML</b> text
+    </p>
+  </xw:panel>
 
-</view>
+</xw:view>

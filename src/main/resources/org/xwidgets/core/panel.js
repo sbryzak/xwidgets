@@ -1,9 +1,8 @@
-Package("xw.controls");
+package("org.xwidgets.core");
 
-xw.controls.Panel = function() {
+org.xwidgets.core.Panel = function() {
   this.width = 200;
   this.height = 100; 
-  this.parent = null;
   
   // the outer div
   this.control = null;
@@ -14,30 +13,29 @@ xw.controls.Panel = function() {
   this.align = null;
   this.layout = null;
   this.layoutManager = null;
+  
+  org.xwidgets.core.Panel.prototype = new xw.Widget();
     
-  xw.controls.Panel.prototype.setParent = function(parent) {
+  org.xwidgets.core.Panel.prototype.setParent = function(parent) {
     this.parent = parent;
-  }
+  };
   
-  xw.controls.Panel.prototype.setAlign = function(align) {
+  org.xwidgets.core.Panel.prototype.setAlign = function(align) {
     this.align = align;
-  }
+  };
   
-  xw.controls.Panel.prototype.setWidth = function(width) {
+  org.xwidgets.core.Panel.prototype.setWidth = function(width) {
     this.width = width;
-  }
+  };
   
-  xw.controls.Panel.prototype.setHeight = function(height) {
+  org.xwidgets.core.Panel.prototype.setHeight = function(height) {
     this.height = height;
-  }
+  };
   
-  /*
-   * Paint the control
-   *
-   * layout - an overriding layout to use
-   *
-   */ 
-  xw.controls.Panel.prototype.paint = function(layout) {
+  //
+  // Render the panel
+  // 
+  org.xwidgets.core.Panel.prototype.render = function(container) {
     if (this.control == null)
     {
       this.control = document.createElement("div");
@@ -53,8 +51,8 @@ xw.controls.Panel = function() {
       this.control.style.padding = "0px";
       this.control.style.margin = "0px";
        
-      if (layout != null) {
-        var bounds = layout.getBounds(this);
+      if (this.layout != null) {
+        var bounds = this.layout.getBounds(this);
         if (bounds != null) this.applyBounds(bounds);
       }
       else {
@@ -63,7 +61,7 @@ xw.controls.Panel = function() {
         this.control.style.display = "inline";
       }
 
-      this.parent.appendChild(this.control);
+      container.appendChild(this.control);
     }    
         
     if (this.inner == null) {
@@ -73,7 +71,7 @@ xw.controls.Panel = function() {
       this.inner.style.height = "100%";
       this.inner.style.position = "relative";
       this.inner.style.border = "0px";    
-      this.control.appendChild(this.inner);      
+      container.appendChild(this.inner);      
     }
      
     // Create the appropriate layout manager and layout the child controls
@@ -84,19 +82,19 @@ xw.controls.Panel = function() {
       this.layoutManager = new xw.BorderLayout(this);
     }
       
-    this.layoutManager.layout(this);           
-  }  
+    this.layoutManager.layout(container, this.children);           
+  };  
   
-  xw.controls.Panel.prototype.appendChild = function(child) {
+  org.xwidgets.core.Panel.prototype.appendChild = function(child) {
     this.inner.appendChild(child);
-  }
+  };
   
   // TODO this has *got* to be renamed
-  xw.controls.Panel.prototype.getContainingControl = function() {
+  org.xwidgets.core.Panel.prototype.getContainingControl = function() {
     return this.inner;
-  }
+  };
   
-  xw.controls.Panel.prototype.applyBounds = function(bounds) {  
+  org.xwidgets.core.Panel.prototype.applyBounds = function(bounds) {  
     if (bounds.left != null) this.control.style.left = bounds.left + "px";
     if (bounds.top != null) this.control.style.top = bounds.top + "px";
     
@@ -121,5 +119,5 @@ xw.controls.Panel = function() {
         this.control.style.width = bounds.width;
       }
     }
-  }  
+  }; 
 }
