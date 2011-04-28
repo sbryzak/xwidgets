@@ -1,6 +1,7 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.Label = function() {
+  xw.Widget.call(this);
   this.value = "";
   this.control = null;
   this.textNode = null;  

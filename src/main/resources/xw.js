@@ -466,26 +466,42 @@ xw.ViewManager.createView = function(viewName) {
   return view;
 };
 
+//
+// This function does the work of converting the view definition into
+// actual widget instances
+//
 xw.ViewManager.parseChildren = function(childNodes, parentWidget) {
   var i;
   var widgets = [];
   for (i = 0; i < childNodes.length; i++) {
     var c = childNodes[i];
     if (c instanceof xw.WidgetNode) {
+      
+      // Create an instance of the widget and set its parent
       var widget = xw.Sys.newInstance(c.fqwn);
       widget.setParent(parentWidget);
       
+      // Set the widget's attributes
       for (var p in c.attributes) {
         widget[p] = c.attributes[p]; 
       }
       
       widgets.push(widget);
+      
+      // If this node has children, parse them also
       if (!xw.Sys.isUndefined(c.children) && c.children.length > 0) {
         xw.ViewManager.parseChildren(c.children, widget);
       }
+    } else if (c instanceof xw.EventNode) {      
+      var action = new xw.Action();
+      action.script = c.script;
+      parentWidget.events[c.type] = action;
     }
-  }  
-  parentWidget.children = widgets;    
+  }
+    
+  if (widgets.length > 0) {
+    parentWidget.children = widgets;    
+  }
 };
 
 //
@@ -621,6 +637,8 @@ xw.BorderLayout = function() {
     // TODO - support percentage widths
 
     container.style.position = "relative";
+    
+    xw.Sys.getStyle(container, "position")
 
     for (i = 0; i < widgets.length; i++) {
       var w = widgets[i];
@@ -719,12 +737,25 @@ xw.Bounds = function(top, left, height, width) {
   };
 };
 
+xw.Action = function() {
+  this.script = null;
+};
+
+xw.Action.prototype.invoke = function() {
+  if (!xw.Sys.isUndefined(this.script)) {
+    return eval(this.script);
+  }
+};
+
 //
 // Base class for widgets
 //
 xw.Widget = function() {
   this.parent = null;
   this.children = [];  
+  
+  // Contains event actions for this widget
+  this.events = {};
 };
 
 xw.Widget.prototype.setParent = function(parent) {
@@ -736,14 +767,19 @@ xw.Widget.prototype.render = function() {
 };
 
 xw.Container = function() {
+  xw.Widget.call(this);
   // FIXME hard coded the layout for now
   this.layout = new xw.BorderLayout();
 }
 
+xw.Container.prototype = new xw.Widget();
+
 xw.Container.prototype.setLayout = function(layoutName) {
+  // TODO rewrite this entire function
+
   //this.layout = 
   
-  // TODO rewrite this
+
   //if ("string" === (typeof layout)) {
 //    this.layoutManager = new xw.layoutManagers[layout](this);
 //  } else {
@@ -751,15 +787,15 @@ xw.Container.prototype.setLayout = function(layoutName) {
   //}  
 }
 
-xw.Container.prototype = new xw.Widget();
+
 
 //
 // A single instance of a view
 //
 xw.View = function() {  
+  xw.Container(this);
   // The container control
-  this.container = null;
-  
+  this.container = null;  
   delete this.parent;
 };
 

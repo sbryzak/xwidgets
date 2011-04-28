@@ -1,6 +1,7 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.Panel = function() {
+  xw.Widget.call(this);
   this.width = 200;
   this.height = 100; 
   
@@ -11,11 +12,9 @@ org.xwidgets.core.Panel = function() {
   this.inner = null;
   
   this.align = null;
-  this.layout = null;
-  this.layoutManager = null;
 };
   
-org.xwidgets.core.Panel.prototype = new xw.Widget();
+org.xwidgets.core.Panel.prototype = new xw.Container();
 
 org.xwidgets.core.Panel.prototype.setAlign = function(align) {
   this.align = align;
@@ -69,12 +68,13 @@ org.xwidgets.core.Panel.prototype.render = function(container) {
     container.appendChild(this.inner);      
   }
    
+   // FIXME
   // Create the appropriate layout manager and layout the child controls
-  if (this.layoutManager == null && this.layout != null) {
-    this.layoutManager = new xw.layoutManagers[this.layout](this);  
-  } else {
+  //if (this.layoutManager == null && this.layout != null) {
+//    this.layoutManager = new xw.layoutManagers[this.layout](this);  
+  //} else {
     this.layoutManager = new xw.BorderLayout(this);
-  }
+  //}
     
   this.layoutManager.calculateLayout(this.children);
   
