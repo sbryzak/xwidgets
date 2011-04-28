@@ -130,6 +130,10 @@ xw.Sys.arrayContains = function(arrayVal, value) {
   return false;
 };
 
+xw.Sys.trim = function(value) {
+  return value.replace(/^\s+|\s+$/g,"");
+};
+
 xw.Sys.capitalize = function(value) {
   return value.substring(0, 1).toUpperCase() + value.substring(1, value.length);
 };
@@ -402,8 +406,11 @@ xw.ViewParser = function() {
           }          
         // Process text nodes here
         } else if (e.nodeType === 3) {
-          // FIXME ignore empty text nodes
-          nodes.push(new xw.TextNode(e.nodeValue));
+          var value = xw.Sys.trim(e.nodeValue);
+          if (value.length > 0) {
+            // We don't want to trim the actual value, as it may contain important space
+            nodes.push(new xw.TextNode(e.nodeValue));
+          }
         }
       }
     }
