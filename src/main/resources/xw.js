@@ -308,9 +308,15 @@ xw.WidgetNode = function(fqwn, attributes, children) {
 //
 // Contains metadata about a view node that represents a native html control
 //
-xw.XHtmlNode = function(children) {
+xw.XHtmlNode = function(tagName, attributes, children) {
+  this.tagName = tagName;
+  this.attributes = attributes;
   this.children = children;
 };
+
+xw.TextNode = function(text) {
+  this.text = text; 
+}
 
 //
 // Parses an XML-based view and returns the view root node
@@ -353,7 +359,24 @@ xw.ViewParser = function() {
     fp += uri.directoryPath + xw.Sys.capitalize(e.localName);
     return fp.replace(/\//g, ".");
   };
+  
+  //
+  // Convenience method, parses the attributes of an XML element
+  // and returns their values in an associative array
+  //
+  xw.ViewParser.prototype.getElementAttributes = function(e) {
+    var attribs = {};
+    var i, n;    
+    for (i = 0; i < e.attributes.length; i++) {
+       n = e.attributes[i].name;
+       attribs[n] = e.getAttribute(n);
+    }     
+    return attribs;
+  }
 
+  //
+  // Converts XML into a view definition
+  //  
   xw.ViewParser.prototype.parseChildNodes = function(children) {
     var nodes = [];
     var i, j;
@@ -363,19 +386,11 @@ xw.ViewParser = function() {
 
       // TODO If this is an XHTML element, it gets parsed differently
       if (e.namespaceURI === xw.XHTML_NAMESPACE) {
-        nodes.push(new xw.XHtmlNode());
+        nodes.push(new xw.XHtmlNode(e.localName, this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
       }
       else {
-        // Only process elements
-        if (e.nodeType === 1) {
-          var attributes = {};
-  
-          // Read the attributes
-          for (j = 0; j < e.attributes.length; j++) {
-            var n = e.attributes[j].name;
-            attributes[n] = e.getAttribute(n);
-          }
-  
+        // Process elements here
+        if (e.nodeType === 1) {  
           if (e.namespaceURI === xw.CORE_NAMESPACE && e.localName === "event") {
             var event = this.parseEvent(e);
             if (event) {              
@@ -383,8 +398,12 @@ xw.ViewParser = function() {
             }
           }
           else {
-            nodes.push(new xw.WidgetNode(this.getFQCN(e), attributes, this.parseChildNodes(e.childNodes)));
-          }
+            nodes.push(new xw.WidgetNode(this.getFQCN(e), this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
+          }          
+        // Process text nodes here
+        } else if (e.nodeType === 3) {
+          // FIXME ignore empty text nodes
+          nodes.push(new xw.TextNode(e.nodeValue));
         }
       }
     }
@@ -467,18 +486,18 @@ xw.ViewManager.createView = function(viewName) {
 };
 
 //
-// This function does the work of converting the view definition into
+// This recursive function does the work of converting the view definition into
 // actual widget instances
 //
 xw.ViewManager.parseChildren = function(childNodes, parentWidget) {
-  var i;
+  var i, widget;
   var widgets = [];
   for (i = 0; i < childNodes.length; i++) {
     var c = childNodes[i];
     if (c instanceof xw.WidgetNode) {
       
       // Create an instance of the widget and set its parent
-      var widget = xw.Sys.newInstance(c.fqwn);
+      widget = xw.Sys.newInstance(c.fqwn);
       widget.setParent(parentWidget);
       
       // Set the widget's attributes
@@ -496,6 +515,20 @@ xw.ViewManager.parseChildren = function(childNodes, parentWidget) {
       var action = new xw.Action();
       action.script = c.script;
       parentWidget.events[c.type] = action;
+    } else if (c instanceof xw.XHtmlNode) {
+      widget = new xw.XHtml();      
+      widget.setParent(parentWidget);
+      widget.tagName = c.tagName;
+      widget.attributes = c.attributes;
+      widgets.push(widget);
+      if (!xw.Sys.isUndefined(c.children) && c.children.length > 0) {
+        xw.ViewManager.parseChildren(c.children, widget); 
+      }
+    } else if (c instanceof xw.TextNode) {
+      widget = new xw.Text();
+      widget.setParent(parentWidget);
+      widget.text = c.text;
+      widgets.push(widget);
     }
   }
     
@@ -762,8 +795,64 @@ xw.Widget.prototype.setParent = function(parent) {
   this.parent = parent;
 };
 
-xw.Widget.prototype.render = function() {
-  alert("Error - this widget must provide an implementation of the render() method");
+xw.Widget.prototype.renderChildren = function(container) {
+  var i;
+  for (i = 0; i < this.children.length; i++) {
+    if (xw.Sys.isUndefined(this.children[i].render)) {
+      throw "Error - widget [" + this.children[i] + "] does not provide a render() method";
+    } else {
+      this.children[i].render(container);       
+    }
+  }
+};
+
+xw.Widget.prototype.toString = function() {
+  return "xw.Widget";
+};
+
+// Represents an XHTML element
+xw.XHtml = function() {
+  xw.Widget.call(this);
+  this.tagName = null; 
+  this.control = null;
+  this.attributes = {};  
+};
+
+xw.XHtml.prototype = new xw.Widget();
+
+xw.XHtml.prototype.render = function(container) {
+  this.control = document.createElement(this.tagName);
+  for (var a in this.attributes) {
+    this.control[a] = this.attributes[a]; 
+  }
+  container.appendChild(this.control);
+  
+  this.renderChildren(this.control);
+};
+
+xw.XHtml.prototype.toString = function() {
+  return "xw.XHtml[" + this.tagName + "]"; 
+};
+
+// Represents plain ol' text
+xw.Text = function() {
+  xw.Widget.call(this);
+  delete children;
+  this.text = ""; 
+  this.control = null;
+};
+
+xw.Text.prototype = new xw.Widget();
+
+xw.Text.prototype.render = function(container) {
+  this.control = document.createElement("span");
+  this.textNode = document.createTextNode(this.text);
+  this.control.appendChild(this.textNode);  
+  container.appendChild(this.control);
+};
+
+xw.Text.prototype.toString = function() {
+  return "xw.Text[" + this.text + "]";
 };
 
 xw.Container = function() {
@@ -809,8 +898,6 @@ xw.View.prototype.resize = function() {
 };
 
 xw.View.prototype.render = function(container) {
-  var i;
-  
   // Determine the container control
   this.container = ("string" === (typeof container)) ? xw.Sys.getObject(container) : container;
 
@@ -825,9 +912,7 @@ xw.View.prototype.render = function(container) {
     this.layout.calculateLayout(this.children);
   }    
   
-  for (i = 0; i < this.children.length; i++) {
-    this.children[i].render(this.container);
-  }
+  this.renderChildren(this.container);
 };
 
 xw.View.prototype.appendChild = function(child) {

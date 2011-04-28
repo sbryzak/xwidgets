@@ -78,9 +78,7 @@ org.xwidgets.core.Panel.prototype.render = function(container) {
     
   this.layoutManager.calculateLayout(this.children);
   
-  for (i = 0; i < this.children.length; i++) {
-    this.children[i].render(this.inner);
-  }  
+  this.renderChildren(this.inner);
 };  
 
 org.xwidgets.core.Panel.prototype.appendChild = function(child) {
