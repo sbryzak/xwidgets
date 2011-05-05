@@ -521,7 +521,7 @@ xw.ViewManager.parseChildren = function(childNodes, parentWidget) {
     } else if (c instanceof xw.EventNode) {      
       var action = new xw.Action();
       action.script = c.script;
-      parentWidget.events[c.type] = action;
+      parentWidget[c.type] = action;
     } else if (c instanceof xw.XHtmlNode) {
       widget = new xw.XHtml();      
       widget.setParent(parentWidget);
@@ -794,12 +794,40 @@ xw.Widget = function() {
   this.parent = null;
   this.children = [];  
   
-  // Contains event actions for this widget
-  this.events = {};
+  // metadata containing the known properties for this widget
+  this._registeredProperties = [];
+  
+  // metadata containing the known events for this widget
+  this._registeredEvents = [];  
 };
 
 xw.Widget.prototype.setParent = function(parent) {
   this.parent = parent;
+};
+
+xw.Widget.prototype.registerProperty = function(propertyName, defaultValue) {
+  if (!xw.Sys.arrayContains(this._registeredProperties, propertyName)) {
+    this._registeredProperties.push(propertyName);
+  };
+  if (!xw.Sys.isUndefined(defaultValue)) {
+    this[propertyName] = defaultValue;
+  };
+};
+
+xw.Widget.prototype.addEvent = function(control, eventName, event) {     
+  if (!xw.Sys.isUndefined(this["on" + eventName]) && !xw.Sys.isUndefined(event)) {        
+    var sender = this;
+    var action = function() {
+      event.invoke(sender);
+    };
+    xw.Sys.chainEvent(control, eventName, action);
+  }
+}
+
+xw.Widget.prototype.registerEvent = function(eventName) {
+  if (!xw.Sys.arrayContains(this._registeredEvents, eventName)) {
+    this._registeredEvents.push(eventName);
+  };
 };
 
 xw.Widget.prototype.renderChildren = function(container) {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xw:view xmlns="http://www.w3.org/1999/xhtml" xmlns:xw="http://xwidgets.org/core">
+
+  <xw:label value="Image button example"/>
+    
+  <p>
+    This button has its image property set:
+  </p>
+  
+  <xw:imageButton image="">
+    <xw:event type="onclick">
+      <xw:action type="script">
+        <![CDATA[alert("Hi there!");]]>
+      </xw:action>
+    </xw:event>
+  </xw:imageButton>
+  
+  <p>
+    This button has its styleClass property set:
+  </p>
+  
+</xw:view>

@@ -3,7 +3,7 @@
   <xw:panel align="client">
     <xw:label value="Hello World!"/>
     
-    <xw:button value="Click me!">
+    <xw:button label="Click me!">
       <xw:event type="onclick">
         <xw:action type="script">
           <![CDATA[alert("Hi there!");]]>
@@ -11,7 +11,7 @@
       </xw:event>
     </xw:button>
     
-    <xw:button value="Change label">
+    <xw:button label="Change label">
       <xw:event type="onclick">
         <xw:action type="script">
           <![CDATA[arguments[0].parent.children[0].setValue('foo');]]>
