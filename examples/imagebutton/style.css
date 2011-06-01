@@ -1,0 +1,6 @@
+a.test, a.test:visited {
+  display: block;
+  width: 80px;
+  height:20px;
+  background-color: #ff0000;
+}

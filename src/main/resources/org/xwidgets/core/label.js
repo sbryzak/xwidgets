@@ -2,25 +2,23 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Label = function() {
   xw.Widget.call(this);
-  this.value = "";
+  this.registerProperty("value", "");
   this.control = null;
-  this.textNode = null;  
 };
 
 org.xwidgets.core.Label.prototype = new xw.Widget();
   
 org.xwidgets.core.Label.prototype.render = function(container) {
   if (this.control == null) {
-    this.control = document.createElement("span");
-    this.textNode = document.createTextNode(this.value);
-    this.control.appendChild(this.textNode);
-    this.control.widget = this;
-    container.appendChild(this.control);
+    var s = document.createElement("span");
+    this.control = document.createTextNode(this.value);
+    s.appendChild(this.control);
+    container.appendChild(s);
   }       
 };
   
 org.xwidgets.core.Label.prototype.setValue = function(value) {
   this.value = value;
-  if (this.textNode) this.textNode.data = value;
+  if (this.control) this.control.data = value;
 };
 
