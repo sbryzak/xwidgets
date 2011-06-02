@@ -678,7 +678,7 @@ xw.BorderLayout = function() {
 
 //    container.style.position = "relative";
     
-    xw.Sys.getStyle(container, "position")
+//    xw.Sys.getStyle(container, "position")
 
     for (i = 0; i < widgets.length; i++) {
       var w = widgets[i];
