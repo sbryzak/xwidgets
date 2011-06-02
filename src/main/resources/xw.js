@@ -676,7 +676,7 @@ xw.BorderLayout = function() {
 
     // TODO - support percentage widths
 
-    container.style.position = "relative";
+//    container.style.position = "relative";
     
     xw.Sys.getStyle(container, "position")
 
