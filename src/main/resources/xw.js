@@ -858,12 +858,20 @@ xw.XHtml.prototype = new xw.Widget();
 xw.XHtml.prototype.render = function(container) {
   this.control = document.createElement(this.tagName);
   for (var a in this.attributes) {
-    this.control[a] = this.attributes[a]; 
+    this.setAttribute(a, this.attributes[a]);
   }
   container.appendChild(this.control);
   
   this.renderChildren(this.control);
 };
+
+xw.XHtml.prototype.setAttribute = function(attribName, value) {
+  if (attribName == "class") {
+    this.control.className = value;
+  } else {
+    this.control[attribName] = value;
+  }
+}
 
 xw.XHtml.prototype.toString = function() {
   return "xw.XHtml[" + this.tagName + "]"; 

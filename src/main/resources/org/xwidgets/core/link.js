@@ -4,6 +4,7 @@ org.xwidgets.core.Link = function() {
   xw.Widget.call(this);
   this.registerProperty("caption", "");
   this.registerProperty("className", "");
+  this.registerEvent("onclick", null);
   this.control = null;
 };
 
@@ -15,6 +16,7 @@ org.xwidgets.core.Link.prototype.render = function(container) {
     this.control.className = this.className;
     this.control.appendChild(document.createTextNode(this.caption));
     this.control.href = "#";
+    this.addEvent(this.control, "click", this.onclick);    
     container.appendChild(this.control);  
   }       
 };
