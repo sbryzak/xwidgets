@@ -85,6 +85,8 @@ xw.Sys.loadSource = function(url, callback) {
         if (callback) {
           callback();
         }
+      } else if (req.status === 404) {
+        alert("404 error: the requested resource '" + url + "' could not be found.");
       }
     }
   };
@@ -151,6 +153,10 @@ xw.Sys.chainEvent = function(ctl, eventName, eventFunc) {
     // really old browsers
     alert("your browser doesn't support adding event listeners");
   }
+};
+
+xw.Sys.endsWith = function(value, suffix) {
+  return value.indexOf(suffix, value.length - suffix.length) !== -1;
 };
 
 //
@@ -487,7 +493,7 @@ xw.ViewManager.createView = function(viewName) {
   var view = new xw.View();
   var definition = xw.ViewManager.viewCache[viewName];
   
-  xw.ViewManager.parseChildren(definition.children, view);
+  xw.ViewManager.parseChildren(view, definition.children, view);
   
   return view;
 };
@@ -496,44 +502,54 @@ xw.ViewManager.createView = function(viewName) {
 // This recursive function does the work of converting the view definition into
 // actual widget instances
 //
-xw.ViewManager.parseChildren = function(childNodes, parentWidget) {
+xw.ViewManager.parseChildren = function(view, childNodes, parentWidget) {
   var i, widget;
   var widgets = [];
   for (i = 0; i < childNodes.length; i++) {
     var c = childNodes[i];
     if (c instanceof xw.WidgetNode) {
       
-      // Create an instance of the widget and set its parent
+      // Create an instance of the widget and set its parent and view
       widget = xw.Sys.newInstance(c.fqwn);
       widget.setParent(parentWidget);
+      widget.view = view;
       
       // Set the widget's attributes
       for (var p in c.attributes) {
-        widget[p] = c.attributes[p]; 
+        // Set the id by calling the setId() method
+        if (p === "id") {
+          widget.setId(c.attributes[p]);
+        // otherwise set the attribute value directly
+        } else {      
+          widget[p] = c.attributes[p]; 
+        }
       }
       
       widgets.push(widget);
       
       // If this node has children, parse them also
       if (!xw.Sys.isUndefined(c.children) && c.children.length > 0) {
-        xw.ViewManager.parseChildren(c.children, widget);
+        xw.ViewManager.parseChildren(view, c.children, widget);
       }
     } else if (c instanceof xw.EventNode) {      
       var action = new xw.Action();
       action.script = c.script;
+      action.view = view;
       parentWidget[c.type] = action;
     } else if (c instanceof xw.XHtmlNode) {
       widget = new xw.XHtml();      
       widget.setParent(parentWidget);
+      widget.view = view;
       widget.tagName = c.tagName;
       widget.attributes = c.attributes;
       widgets.push(widget);
       if (!xw.Sys.isUndefined(c.children) && c.children.length > 0) {
-        xw.ViewManager.parseChildren(c.children, widget); 
+        xw.ViewManager.parseChildren(view, c.children, widget); 
       }
     } else if (c instanceof xw.TextNode) {
       widget = new xw.Text();
       widget.setParent(parentWidget);
+      widget.view = view;
       widget.text = c.text;
       widgets.push(widget);
     }
@@ -799,6 +815,23 @@ xw.Widget = function() {
   
   // metadata containing the known events for this widget
   this._registeredEvents = [];  
+  
+  // register the id property
+  this._registeredProperties.push("id"); 
+};
+
+xw.Widget.prototype.getId = function() {
+  return this.id;
+};
+
+xw.Widget.prototype.setId = function(id) {
+  // register the id of this widget with the owning view.
+  if (!xw.Sys.isUndefined(this.id)) {
+    this.view.unregisterWidget(this.id);
+  }
+
+  this.id = id;
+  this.view.registerWidget(this.id, this);  
 };
 
 xw.Widget.prototype.setParent = function(parent) {
@@ -920,7 +953,6 @@ xw.Container.prototype.setLayout = function(layoutName) {
 }
 
 
-
 //
 // A single instance of a view
 //
@@ -979,5 +1011,17 @@ xw.setResourceBase = function(resourceBase) {
 };
 
 xw.getResourceBase = function() {
-  return xw.Sys.isUndefined(xw.resourceBase) ? "" : xw.resourceBase + "/";
+  return xw.Sys.isUndefined(xw.resourceBase) ? "" : xw.resourceBase + (xw.Sys.endsWith(xw.resourceBase, "/") ? "" : "/");
 };
+
+
+// 
+// DATA BINDING WIDGETS
+//
+xw.DataSource = function() {
+  xw.Widget.call(this);
+};
+
+xw.DataSource.prototype = new xw.Widget();
+
+
