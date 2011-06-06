@@ -394,7 +394,6 @@ xw.ViewParser = function() {
     for (i = 0; i < children.length; i++) {
       var e = children.item(i);
 
-      // TODO If this is an XHTML element, it gets parsed differently
       if (e.namespaceURI === xw.XHTML_NAMESPACE) {
         nodes.push(new xw.XHtmlNode(e.localName, this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
       }
@@ -827,11 +826,11 @@ xw.Widget.prototype.getId = function() {
 xw.Widget.prototype.setId = function(id) {
   // register the id of this widget with the owning view.
   if (!xw.Sys.isUndefined(this.id)) {
-    this.view.unregisterWidget(this.id);
+    this.view.unregisterWidget(this);
+  } else {
+    this.view.registerWidget(this);  
   }
-
   this.id = id;
-  this.view.registerWidget(this.id, this);  
 };
 
 xw.Widget.prototype.setParent = function(parent) {
@@ -841,10 +840,10 @@ xw.Widget.prototype.setParent = function(parent) {
 xw.Widget.prototype.registerProperty = function(propertyName, defaultValue) {
   if (!xw.Sys.arrayContains(this._registeredProperties, propertyName)) {
     this._registeredProperties.push(propertyName);
-  };
+  }
   if (!xw.Sys.isUndefined(defaultValue)) {
     this[propertyName] = defaultValue;
-  };
+  }
 };
 
 xw.Widget.prototype.addEvent = function(control, eventName, event) {     
@@ -860,7 +859,7 @@ xw.Widget.prototype.addEvent = function(control, eventName, event) {
 xw.Widget.prototype.registerEvent = function(eventName) {
   if (!xw.Sys.arrayContains(this._registeredEvents, eventName)) {
     this._registeredEvents.push(eventName);
-  };
+  }
 };
 
 xw.Widget.prototype.renderChildren = function(container) {
@@ -960,6 +959,7 @@ xw.View = function() {
   xw.Container(this);
   // The container control
   this.container = null;  
+  this._registeredWidgets = [];
   delete this.parent;
 };
 
@@ -994,6 +994,14 @@ xw.View.prototype.appendChild = function(child) {
   this.container.appendChild(child);
 };
 
+// Registers a named (i.e. having an "id" property) widget
+xw.View.prototype.registerWidget = function(widget) {
+  this._registeredWidgets.push(widget);
+};
+
+xw.View.prototype.unregisterWidget = function(widget) {
+  // TODO remove the specified widget from the registered widgets array
+};
 
 //
 // GENERAL METHODS
