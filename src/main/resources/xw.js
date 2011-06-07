@@ -225,6 +225,39 @@ xw.Sys.parseXml = function(body) {
   }
 };
 
+xw.Sys.setObjectProperty = function(obj, property, value) {
+  // Check if the object has a setter method
+  var setterName = "set" + xw.Sys.capitalize(property);
+  if (!xw.Sys.isUndefined(obj, setterName) && typeof obj[setterName] === "function") {
+    obj[setterName](value);
+  } else {
+    obj[property] = value;
+  }
+};
+
+// 
+// Expression language
+//
+
+xw.EL = {};
+
+xw.EL.isExpression = function(expr) {
+  return /#{([A-Za-z0-9]+(.[A-Za-z0-9])*)}/.test(expr);
+};
+
+xw.EL.eval = function(view, expr) {
+  var parts = /#{([A-Za-z0-9]+(.[A-Za-z0-9])*)}/(expr)[1].split(".");
+  if (xw.Sys.isUndefined(view._registeredWidgets[parts[0]])) {
+    // TODO implement extensible framework for custom variable resolvers
+  } else {
+    var value = view._registeredWidgets[parts[0]];
+    for (var i = 1; i < parts.length; i++) {
+      value = value[parts[i]];
+    }
+    return value;
+  }
+};
+
 //
 // A Map implementation
 //
@@ -307,6 +340,14 @@ xw.EventNode = function(type, script) {
 };
 
 //
+// Contains metadata about a datasource
+//
+xw.DataSourceNode = function(id, dataSet) {
+  this.id = id;
+  this.dataSet = dataSet;
+};
+
+//
 // Contains metadata about a view node that represents a widget
 //
 xw.WidgetNode = function(fqwn, attributes, children) {
@@ -331,123 +372,124 @@ xw.TextNode = function(text) {
 //
 // Parses an XML-based view and returns the view root node
 //
-xw.ViewParser = function() {
+xw.ViewParser = function() {};
 
-  xw.ViewParser.prototype.parse = function(viewRoot) {
-    var rootNode = new xw.WidgetNode(this.getFQCN(viewRoot), null, this.parseChildNodes(viewRoot.childNodes));
-    return rootNode;
-  };
+xw.ViewParser.prototype.parse = function(viewRoot) {
+  var rootNode = new xw.WidgetNode(this.getFQCN(viewRoot), null, this.parseChildNodes(viewRoot.childNodes));
+  return rootNode;
+};
 
-  xw.ViewParser.prototype.parseUri = function(uri) {
-    var i;
-    var partNames = ["source","protocol","authority","domain","port","path","directoryPath","fileName","query","anchor"];
-    var parts = new RegExp("^(?:([^:/?#.]+):)?(?://)?(([^:/?#]*)(?::(\\d*))?)?((/(?:[^?#](?![^?#/]*\\.[^?#/.]+(?:[\\?#]|$)))*/?)?([^?#/]*))?(?:\\?([^#]*))?(?:#(.*))?").exec(uri);
-    var result = {};
+xw.ViewParser.prototype.parseUri = function(uri) {
+  var i;
+  var partNames = ["source","protocol","authority","domain","port","path","directoryPath","fileName","query","anchor"];
+  var parts = new RegExp("^(?:([^:/?#.]+):)?(?://)?(([^:/?#]*)(?::(\\d*))?)?((/(?:[^?#](?![^?#/]*\\.[^?#/.]+(?:[\\?#]|$)))*/?)?([^?#/]*))?(?:\\?([^#]*))?(?:#(.*))?").exec(uri);
+  var result = {};
 
-    for (i = 0; i < 10; i++) {
-      result[partNames[i]] = (parts[i] ? parts[i] : "");
-    }
-
-    if (result.directoryPath.length > 0) {
-      result.directoryPath = result.directoryPath.replace(/\/?$/, "/");
-    }
-
-    return result;
-  };
-
-  xw.ViewParser.prototype.getFQCN = function(e) {
-    var uri = this.parseUri(e.namespaceURI);
-    var i;
-    var fp = "";
-    var parts = uri.domain.split(".");
-    for (i = parts.length - 1; i >=0; i--) {
-      fp += parts[i];
-      if (i > 0) {
-        fp += "/";
-      }
-    }
-    fp += uri.directoryPath + xw.Sys.capitalize(e.localName);
-    return fp.replace(/\//g, ".");
-  };
-  
-  //
-  // Convenience method, parses the attributes of an XML element
-  // and returns their values in an associative array
-  //
-  xw.ViewParser.prototype.getElementAttributes = function(e) {
-    var attribs = {};
-    var i, n;    
-    for (i = 0; i < e.attributes.length; i++) {
-       n = e.attributes[i].name;
-       attribs[n] = e.getAttribute(n);
-    }     
-    return attribs;
+  for (i = 0; i < 10; i++) {
+    result[partNames[i]] = (parts[i] ? parts[i] : "");
   }
 
-  //
-  // Converts XML into a view definition
-  //  
-  xw.ViewParser.prototype.parseChildNodes = function(children) {
-    var nodes = [];
-    var i, j;
+  if (result.directoryPath.length > 0) {
+    result.directoryPath = result.directoryPath.replace(/\/?$/, "/");
+  }
 
-    for (i = 0; i < children.length; i++) {
-      var e = children.item(i);
+  return result;
+};
 
-      if (e.namespaceURI === xw.XHTML_NAMESPACE) {
-        nodes.push(new xw.XHtmlNode(e.localName, this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
-      }
-      else {
-        // Process elements here
-        if (e.nodeType === 1) {  
-          if (e.namespaceURI === xw.CORE_NAMESPACE && e.localName === "event") {
-            var event = this.parseEvent(e);
-            if (event) {              
-              nodes.push(event);
-            }
+xw.ViewParser.prototype.getFQCN = function(e) {
+  var uri = this.parseUri(e.namespaceURI);
+  var i;
+  var fp = "";
+  var parts = uri.domain.split(".");
+  for (i = parts.length - 1; i >=0; i--) {
+    fp += parts[i];
+    if (i > 0) {
+      fp += "/";
+    }
+  }
+  fp += uri.directoryPath + xw.Sys.capitalize(e.localName);
+  return fp.replace(/\//g, ".");
+};
+
+//
+// Convenience method, parses the attributes of an XML element
+// and returns their values in an associative array
+//
+xw.ViewParser.prototype.getElementAttributes = function(e) {
+  var attribs = {};
+  var i, n;    
+  for (i = 0; i < e.attributes.length; i++) {
+     n = e.attributes[i].name;
+     attribs[n] = e.getAttribute(n);
+  }     
+  return attribs;
+}
+
+//
+// Converts XML into a view definition
+//  
+xw.ViewParser.prototype.parseChildNodes = function(children) {
+  var nodes = [];
+  var i, j;
+
+  for (i = 0; i < children.length; i++) {
+    var e = children.item(i);
+
+    if (e.namespaceURI === xw.XHTML_NAMESPACE) {
+      nodes.push(new xw.XHtmlNode(e.localName, this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
+    }
+    else {
+      // Process elements here
+      if (e.nodeType === 1) {  
+        if (e.namespaceURI === xw.CORE_NAMESPACE && e.localName === "event") {
+          var event = this.parseEvent(e);
+          if (event) {              
+            nodes.push(event);
           }
-          else {
-            nodes.push(new xw.WidgetNode(this.getFQCN(e), this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
-          }          
-        // Process text nodes here
-        } else if (e.nodeType === 3) {
-          var value = xw.Sys.trim(e.nodeValue);
-          if (value.length > 0) {
-            // We don't want to trim the actual value, as it may contain important space
-            nodes.push(new xw.TextNode(e.nodeValue));
-          }
+        } else if (e.namespaceURI == xw.CORE_NAMESPACE && e.localName === "dataSource") {
+          var ds = new xw.DataSourceNode(e.getAttribute("id"), e.getAttribute("dataSet"));
+          nodes.push(ds);
+        } else {
+          nodes.push(new xw.WidgetNode(this.getFQCN(e), this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
+        }          
+      // Process text nodes here
+      } else if (e.nodeType === 3) {
+        var value = xw.Sys.trim(e.nodeValue);
+        if (value.length > 0) {
+          // We don't want to trim the actual value, as it may contain important space
+          nodes.push(new xw.TextNode(e.nodeValue));
         }
       }
     }
-    return nodes;
-  };
+  }
+  return nodes;
+};
 
-  //
-  // Parses an XML element that contains an event definition and extracts the event type and script
-  // which are then returned as an EventNode instance.
-  xw.ViewParser.prototype.parseEvent = function(e) {
-    var i, j, script;
-    var eventType = e.getAttribute("type");
-    for (i = 0; i < e.childNodes.length; i++) {
-      var child = e.childNodes.item(i);
+//
+// Parses an XML element that contains an event definition and extracts the event type and script
+// which are then returned as an EventNode instance.
+xw.ViewParser.prototype.parseEvent = function(e) {
+  var i, j, script;
+  var eventType = e.getAttribute("type");
+  for (i = 0; i < e.childNodes.length; i++) {
+    var child = e.childNodes.item(i);
 
-      if (child.nodeType === 1 && 
-          child.namespaceURI === xw.CORE_NAMESPACE && 
-          child.localName === "action" && 
-          child.getAttribute("type") === "script") {
-        // get all the text content of the action node, textContent would be easier but IE doesn't support that
-        script = "";
-        for (j = 0; j < child.childNodes.length; j++) {
-          var grandChild = child.childNodes[j];
-          var nodeType = grandChild.nodeType;
-  
-          // not TEXT or CDATA
-          if (nodeType === 3 || nodeType === 4) {
-            script += grandChild.nodeValue;
-          }
+    if (child.nodeType === 1 && 
+        child.namespaceURI === xw.CORE_NAMESPACE && 
+        child.localName === "action" && 
+        child.getAttribute("type") === "script") {
+      // get all the text content of the action node, textContent would be easier but IE doesn't support that
+      script = "";
+      for (j = 0; j < child.childNodes.length; j++) {
+        var grandChild = child.childNodes[j];
+        var nodeType = grandChild.nodeType;
+
+        // not TEXT or CDATA
+        if (nodeType === 3 || nodeType === 4) {
+          script += grandChild.nodeValue;
         }
-        return new xw.EventNode(eventType, script);
       }
+      return new xw.EventNode(eventType, script);
     }
   }
 };
@@ -518,9 +560,18 @@ xw.ViewManager.parseChildren = function(view, childNodes, parentWidget) {
         // Set the id by calling the setId() method
         if (p === "id") {
           widget.setId(c.attributes[p]);
+        } else if (xw.EL.isExpression(c.attributes[p])) {
+          // We're dealing with an EL expression, try to evaluate it here and if we fail, 
+          // store it for post-create-view evaluation
+          var value = xw.EL.eval(view, c.attributes[p]);
+          if (!xw.Sys.isUndefined(value)) {
+            xw.Sys.setObjectProperty(widget, p, value);
+          } else {
+            // TODO store the unresolvable expression somewhere to evaluate it later on
+          }
         // otherwise set the attribute value directly
         } else {      
-          widget[p] = c.attributes[p]; 
+          xw.Sys.setObjectProperty(widget, p, c.attributes[p]);
         }
       }
       
@@ -535,6 +586,16 @@ xw.ViewManager.parseChildren = function(view, childNodes, parentWidget) {
       action.script = c.script;
       action.view = view;
       parentWidget[c.type] = action;
+    } else if (c instanceof xw.DataSourceNode) {
+      var ds = new xw.DataSource();
+      ds.id = c.id;
+
+      // TODO fix this, it's a hack.. in fact we need to overhaul the entire 
+      // system for setting object properties 
+      var dataSet = xw.EL.eval(view, c.dataSet);
+      xw.Sys.setObjectProperty(ds, "dataSet", dataSet);
+      
+      view.addDataSource(ds);
     } else if (c instanceof xw.XHtmlNode) {
       widget = new xw.XHtml();      
       widget.setParent(parentWidget);
@@ -979,6 +1040,7 @@ xw.View = function(viewName) {
   // The container control
   this.container = null;  
   this._registeredWidgets = {};
+  this.dataSources = [];
   delete this.parent;
 };
 
@@ -1027,6 +1089,13 @@ xw.View.prototype.unregisterWidget = function(widget) {
   }
 };
 
+xw.View.prototype.addDataSource = function(ds) {
+  this.dataSources.push(ds);
+  if (!xw.Sys.isUndefined(ds.id)) {
+    this.registerWidget(ds);
+  }
+};
+
 xw.View.prototype.toString = function() {
   return "xw.View [" + this.viewName + "]";
 };
@@ -1056,8 +1125,41 @@ xw.getResourceBase = function() {
 //
 xw.DataSource = function() {
   xw.Widget.call(this);
+  this.registerProperty("dataSet", null);
+  this.registerProperty("active", false);
+  this.subscribers = [];
 };
 
 xw.DataSource.prototype = new xw.Widget();
+
+xw.DataSource.prototype.setDataSet = function(dataSet) {
+  this.dataSet = dataSet;
+  this.dataSet.dataSource = this;
+};
+
+xw.DataSource.prototype.subscribe = function(subscriber) {
+  this.subscribers.push(subscriber);
+};
+
+xw.DataSource.prototype.notify = function() {
+  this.active = true;
+  for (var i = 0; i < this.subscribers.length; i++) {
+    this.subscribers[i].notify();
+  }
+};
+
+xw.DataSource.prototype.setActive = function() {
+  if (!this.active) {
+    this.active = true;
+    
+    if (!xw.Sys.isUndefined(this.dataSet)) {
+      this.dataSet.open();
+    }
+  }
+};
+
+xw.DataSource.prototype.isActive = function() {
+  return this.active;
+};
 
 
