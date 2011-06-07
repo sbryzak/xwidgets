@@ -23,7 +23,7 @@ org.xwidgets.core.SelectItems.prototype.render = function(container) {
 };
 
 org.xwidgets.core.SelectItems.prototype.renderOptions = function() {
-  if (this.dataSource.isActive()) {
+  if (this.dataSource.dataSet.isActive()) {
     for (var i = 0; i < this.dataSource.dataSet.values.length; i++) {
       var value = this.dataSource.dataSet.values[i];
       

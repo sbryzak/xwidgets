@@ -81,7 +81,11 @@ xw.Sys.loadSource = function(url, callback) {
           var html = document.getElementsByTagName("html")[0];
           html.insertBefore(head, html.firstChild);
         }
-        head.appendChild(e);
+        try {
+          head.appendChild(e);
+        } catch (err) {
+          alert("There was an error loading the script from '" + url + "': " + err.description);
+        }
         if (callback) {
           callback();
         }
@@ -1047,6 +1051,7 @@ xw.Container.prototype.setLayout = function(layoutName) {
 xw.View = function(viewName) {  
   this.viewName = viewName;
   xw.Container(this);
+  this.registerEvent("afterRender", null);
   // The container control
   this.container = null;  
   this._registeredWidgets = {};
@@ -1079,6 +1084,10 @@ xw.View.prototype.render = function(container) {
   }    
   
   this.renderChildren(this.container);
+  
+  if (!xw.Sys.isUndefined(this.afterRender)) {
+    this.afterRender.invoke();
+  }
 };
 
 xw.View.prototype.appendChild = function(child) {
@@ -1136,7 +1145,6 @@ xw.getResourceBase = function() {
 xw.DataSource = function() {
   xw.Widget.call(this);
   this.registerProperty("dataSet", null);
-  this.registerProperty("active", false);
   this.subscribers = [];
 };
 
@@ -1149,6 +1157,7 @@ xw.DataSource.prototype.setDataSet = function(dataSet) {
 
 xw.DataSource.prototype.subscribe = function(subscriber) {
   this.subscribers.push(subscriber);
+  this.set
 };
 
 xw.DataSource.prototype.notify = function() {
@@ -1157,19 +1166,4 @@ xw.DataSource.prototype.notify = function() {
     this.subscribers[i].notify();
   }
 };
-
-xw.DataSource.prototype.setActive = function() {
-  if (!this.active) {
-    this.active = true;
-    
-    if (!xw.Sys.isUndefined(this.dataSet)) {
-      this.dataSet.open();
-    }
-  }
-};
-
-xw.DataSource.prototype.isActive = function() {
-  return this.active;
-};
-
 
