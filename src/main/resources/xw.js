@@ -489,7 +489,7 @@ xw.ViewManager.openView = function(viewName, container) {
 // Creates an instance of the named view
 //
 xw.ViewManager.createView = function(viewName) {
-  var view = new xw.View();
+  var view = new xw.View(viewName);
   var definition = xw.ViewManager.viewCache[viewName];
   
   xw.ViewManager.parseChildren(view, definition.children, view);
@@ -798,7 +798,24 @@ xw.Action = function() {
 
 xw.Action.prototype.invoke = function() {
   if (!xw.Sys.isUndefined(this.script)) {
-    return eval(this.script);
+    // The script must have access to named widgets (widgets with an id)
+    // to do this, we inject some additional lines into the front of the 
+    // script.
+  
+    var __script = "{";
+    
+    for (var id in this.view._registeredWidgets) {
+      __script += "var " + id + " = __registered[\"" + id + "\"];";
+    }
+       
+    __script += this.script;
+    __script += "}";    
+
+    // local variable, visible to our evaluated script -
+    // required to set up script variables     
+    var __registered = this.view._registeredWidgets;
+    
+    return eval(__script);
   }
 };
 
@@ -827,10 +844,11 @@ xw.Widget.prototype.setId = function(id) {
   // register the id of this widget with the owning view.
   if (!xw.Sys.isUndefined(this.id)) {
     this.view.unregisterWidget(this);
+    this.id = null;
   } else {
+    this.id = id;
     this.view.registerWidget(this);  
   }
-  this.id = id;
 };
 
 xw.Widget.prototype.setParent = function(parent) {
@@ -955,11 +973,12 @@ xw.Container.prototype.setLayout = function(layoutName) {
 //
 // A single instance of a view
 //
-xw.View = function() {  
+xw.View = function(viewName) {  
+  this.viewName = viewName;
   xw.Container(this);
   // The container control
   this.container = null;  
-  this._registeredWidgets = [];
+  this._registeredWidgets = {};
   delete this.parent;
 };
 
@@ -996,11 +1015,20 @@ xw.View.prototype.appendChild = function(child) {
 
 // Registers a named (i.e. having an "id" property) widget
 xw.View.prototype.registerWidget = function(widget) {
-  this._registeredWidgets.push(widget);
+  this._registeredWidgets[widget.id] = widget;
 };
 
 xw.View.prototype.unregisterWidget = function(widget) {
-  // TODO remove the specified widget from the registered widgets array
+  for (var id in this._registeredWidgets) {
+    if (this._registeredWidgets[id] == widget) {
+      delete this._registeredWidgets[id];
+      break;
+    }
+  }
+};
+
+xw.View.prototype.toString = function() {
+  return "xw.View [" + this.viewName + "]";
 };
 
 //
