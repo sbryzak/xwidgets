@@ -27,11 +27,12 @@ org.xwidgets.core.SelectItems.prototype.renderOptions = function() {
     for (var i = 0; i < this.dataSource.dataSet.values.length; i++) {
       var value = this.dataSource.dataSet.values[i];
       
-      this.control = document.createElement("option");
-
-      // FIXME these are currently hard coded
-      this.control.text = value.name;
-      this.control.value = value.categoryId;
+      this.control = document.createElement("option");      
+      var locals = {};
+      locals[this["var"]] = value;
+      
+      this.control.value = xw.EL.eval(this.view, this.itemValue, locals);
+      this.control.text = xw.EL.eval(this.view, this.itemLabel, locals);
       this.select.add(this.control, null);
     }
   } else {

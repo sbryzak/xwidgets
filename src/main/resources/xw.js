@@ -241,21 +241,30 @@ xw.Sys.setObjectProperty = function(obj, property, value) {
 
 xw.EL = {};
 
+xw.EL.regex = /#{([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/;
+
 xw.EL.isExpression = function(expr) {
-  return /#{([A-Za-z0-9]+(.[A-Za-z0-9])*)}/.test(expr);
+  return xw.EL.regex.test(expr);
 };
 
-xw.EL.eval = function(view, expr) {
-  var parts = /#{([A-Za-z0-9]+(.[A-Za-z0-9])*)}/(expr)[1].split(".");
-  if (xw.Sys.isUndefined(view._registeredWidgets[parts[0]])) {
-    // TODO implement extensible framework for custom variable resolvers
+xw.EL.eval = function(view, expr, locals) {
+  var parts = xw.EL.regex(expr)[1].split(".");
+  var root = null;
+        
+  if (!xw.Sys.isUndefined(locals) && !xw.Sys.isUndefined(locals[parts[0]])) {
+    root = locals[parts[0]];
+  } else if (!xw.Sys.isUndefined(view._registeredWidgets[parts[0]])) {
+    root = view._registeredWidgets[parts[0]];
   } else {
-    var value = view._registeredWidgets[parts[0]];
-    for (var i = 1; i < parts.length; i++) {
-      value = value[parts[i]];
-    }
-    return value;
+    // TODO implement extensible framework for custom variable resolvers    
+    return undefined;
   }
+  
+  var value = root;
+  for (var i = 1; i < parts.length; i++) {
+    value = value[parts[i]];
+  }
+  return value;  
 };
 
 //
@@ -567,6 +576,7 @@ xw.ViewManager.parseChildren = function(view, childNodes, parentWidget) {
           if (!xw.Sys.isUndefined(value)) {
             xw.Sys.setObjectProperty(widget, p, value);
           } else {
+            xw.Sys.setObjectProperty(widget, p, c.attributes[p]);
             // TODO store the unresolvable expression somewhere to evaluate it later on
           }
         // otherwise set the attribute value directly
