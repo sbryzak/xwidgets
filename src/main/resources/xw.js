@@ -239,6 +239,12 @@ xw.Sys.setObjectProperty = function(obj, property, value) {
   }
 };
 
+xw.Sys.clearChildren = function(e) {
+  while (e.hasChildNodes()) {
+    e.removeChild(e.firstChild);
+  }
+};
+
 // 
 // Expression language
 //
@@ -515,7 +521,12 @@ xw.ViewManager = {};
 // A cache of view name:root view node values
 xw.ViewManager.viewCache = {};
 
-xw.ViewManager.openView = function(viewName, container) {
+xw.ViewManager.openView = function(viewName, c) {
+  // Determine the container control and clear it
+  var container = ("string" === (typeof c)) ? xw.Sys.getObject(c) : c;
+  
+  xw.Sys.clearChildren(container);
+
   // If we haven't previously loaded the view, do it now
   if (xw.Sys.isUndefined(xw.ViewManager.viewCache[viewName])) {
     var callback = function(req) {
@@ -1069,8 +1080,7 @@ xw.View.prototype.resize = function() {
 };
 
 xw.View.prototype.render = function(container) {
-  // Determine the container control
-  this.container = ("string" === (typeof container)) ? xw.Sys.getObject(container) : container;
+  this.container = container;
 
   // Set the window resize callback so that we can respond to resize events
   var target = this;
