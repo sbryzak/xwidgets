@@ -740,8 +740,12 @@ xw.WidgetManager.loadWidgetsAndOpenView = function(widgets, viewName, container)
 xw.WidgetManager.loadPendingWidgets = function() {
   if (xw.WidgetManager.pendingWidgets.length > 0) {
     var fqwn = xw.WidgetManager.pendingWidgets.shift();
-    var url = xw.getResourceBase() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
-    xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);    
+
+    // We do a final check here to see if the class exists before attempting to load it
+    if (!xw.Sys.classExists(fqwn)) {
+      var url = xw.getResourceBase() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
+      xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);    
+    }
   } else {
     // Render any pending views
     while (xw.WidgetManager.pendingViews.length > 0) {
