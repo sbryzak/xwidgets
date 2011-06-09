@@ -163,6 +163,13 @@ xw.Sys.endsWith = function(value, suffix) {
   return value.indexOf(suffix, value.length - suffix.length) !== -1;
 };
 
+xw.Sys.uid = function() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+};
+
 //
 // Returns the specified style for an element
 // TODO - probably need to fix this up for safari - use xw.Sys.getBorder() as an example
@@ -737,6 +744,9 @@ xw.WidgetManager.loadWidgetsAndOpenView = function(widgets, viewName, container)
   xw.WidgetManager.loadPendingWidgets();
 };
 
+// 
+// A recursive method that loads any unloaded widgets, then renders any pending views
+//
 xw.WidgetManager.loadPendingWidgets = function() {
   if (xw.WidgetManager.pendingWidgets.length > 0) {
     var fqwn = xw.WidgetManager.pendingWidgets.shift();
@@ -745,6 +755,8 @@ xw.WidgetManager.loadPendingWidgets = function() {
     if (!xw.Sys.classExists(fqwn)) {
       var url = xw.getResourceBase() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
       xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);    
+    } else {
+      xw.WidgetManager.loadPendingWidgets();
     }
   } else {
     // Render any pending views
