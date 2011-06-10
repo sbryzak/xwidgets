@@ -269,6 +269,54 @@ xw.Sys.clearChildren = function(e) {
 };
 
 // 
+// Local Storage
+//
+
+xw.LocalStorage = {};
+
+xw.LocalStorage.isSupported = function() {
+  try {
+    return 'localStorage' in window && window['localStorage'] !== null;
+  } catch (e) {
+    return false;
+  }
+};
+
+xw.LocalStorage.getItem = function(key) {
+  return xw.LocalStorage.isSupported() ? localStorage.getItem(key) : undefined;
+};
+
+xw.LocalStorage.setItem = function(key, value) {
+  if (xw.LocalStorage.isSupported()) {
+    localStorage[key] = value;
+  }
+};
+
+xw.LocalStorage.remove = function(key) {
+  if (xw.LocalStorage.isSupported()) {
+    localStorage.removeItem(key);
+  }
+};
+
+xw.LocalStorage.clear = function() {
+  if (xw.LocalStorage.isSupported()) {
+    localStorage.clear();
+  }
+};
+
+xw.LocalStorage.length = function() {
+  if (xw.LocalStorage.isSupported()) {
+    return localStorage.length;
+  }
+};
+
+xw.LocalStorage.getKey = function(idx) {
+  if (xw.LocalStorage.isSupported()) {
+    return localStorage.key(idx);
+  }
+};
+
+// 
 // Expression language
 //
 

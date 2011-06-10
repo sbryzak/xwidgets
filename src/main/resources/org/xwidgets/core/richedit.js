@@ -5,11 +5,20 @@ org.xwidgets.core.RichEdit = function() {
   this.registerProperty("value", null);
   this.registerProperty("enableResize", false);
   this.registerProperty("resizeMaxWidth", -1);
+  this.registerEvent("onchange", null);
   this.control = null;
   this.editor = null;  
+
+  // We'll keep track of the length and use it as a hackish way to detect
+  // whether the content has changed
+  this.length = 0;
 };
 
 org.xwidgets.core.RichEdit.prototype = new xw.Widget();
+
+org.xwidgets.core.RichEdit.prototype.getValue = function() {
+  return xw.Sys.isUndefined(this.editor) ? this.value : this.editor.getData();
+};
   
 org.xwidgets.core.RichEdit.prototype.render = function(container) {
   if (this.control == null) {
@@ -51,7 +60,31 @@ org.xwidgets.core.RichEdit.prototype.renderEditor = function() {
 	    { name: 'tools', items : [ 'Maximize', 'ShowBlocks','-','About' ] }
     ];      
 
+    var that = this;
+    var event = function() { that.checkChanged(); };
+    
     this.editor = CKEDITOR.appendTo(this.control, config, this.value);
+
+    this.editor.on("saveSnapshot", event);
+    this.editor.on("afterUndo", event);
+    this.editor.on("afterRedo", event);
+    this.editor.on("afterCommandExec", event);
+    
+    var editor = this.editor;
+    this.editor.on("contentDom", function() {
+      editor.document.on("keyup", event);
+    });
+};
+
+org.xwidgets.core.RichEdit.prototype.checkChanged = function(event) {
+  // Fire an onchange event if the length of the content has changed
+  if (this.editor.getData().length != this.length) {
+    this.length = this.editor.getData().length;
+    if (this.onchange) {
+      this.onchange.invoke();
+    };  
+  }
+
 };
 
 org.xwidgets.core.RichEdit.prototype.destroy = function() {
