@@ -6,6 +6,7 @@ org.xwidgets.core.RichEdit = function() {
   this.registerProperty("enableResize", false);
   this.registerProperty("resizeMaxWidth", -1);
   this.control = null;
+  this.editor = null;
 };
 
 org.xwidgets.core.RichEdit.prototype = new xw.Widget();
@@ -13,6 +14,7 @@ org.xwidgets.core.RichEdit.prototype = new xw.Widget();
 org.xwidgets.core.RichEdit.prototype.render = function(container) {
   if (this.control == null) {
     this.control = document.createElement("div");  
+    container.appendChild(this.control);
     var config = {};   
     config.resize_enabled = this.enableResize;
     if (this.resizeMaxWidth != -1) {
@@ -35,9 +37,13 @@ org.xwidgets.core.RichEdit.prototype.render = function(container) {
 	    { name: 'tools', items : [ 'Maximize', 'ShowBlocks','-','About' ] }
     ];      
 
-    editor = CKEDITOR.appendTo(this.control, config, this.value);
-    container.appendChild(this.control);
+    this.editor = CKEDITOR.appendTo(this.control, config, this.value);
   }
 };
 
-
+org.xwidgets.core.RichEdit.prototype.destroy = function() {
+  if (this.editor != null) {
+    this.editor.destroy();
+    this.editor = null;
+  }
+};

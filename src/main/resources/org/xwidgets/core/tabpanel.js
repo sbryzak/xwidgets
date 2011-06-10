@@ -27,16 +27,15 @@ org.xwidgets.core.TabPanel.prototype = new xw.Widget();
 org.xwidgets.core.TabPanel.prototype.render = function(container) {
   if (this.control == null) {  
     this.control = document.createElement("div");
-    this.control.className = this.styleClass;
-
+    this.control.className = this.styleClass;    
+    container.appendChild(this.control);  
+        
     for (var i = 0; i < this.children.length; i++) {
       this.childContainers[i] = document.createElement("div");
       this.childContainers[i].style.display = (i === 0 ? "block" : "none");
-      this.children[i].render(this.childContainers[i]);    
       this.control.appendChild(this.childContainers[i]);
-    }
-    
-    container.appendChild(this.control);  
+      this.children[i].render(this.childContainers[i]);    
+    }    
   }       
 };
 

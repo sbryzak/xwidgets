@@ -541,13 +541,33 @@ xw.ViewParser.prototype.parseEvent = function(e) {
 //
 xw.ViewManager = {};
 
-// A cache of view name:root view node values
+//
+// A cache of view name:root view node values - essentially, this cache
+// contains the view definitions
+//
 xw.ViewManager.viewCache = {};
 
+//
+// References to open views are stored here.  Each entry in this array should contain the container, 
+// and the view, i.e. {container: xxxx, view: yyyy}
+//
+xw.ViewManager.openViews = [];
+
 xw.ViewManager.openView = function(viewName, c) {
-  // Determine the container control and clear it
+  // Determine the container control 
   var container = ("string" === (typeof c)) ? xw.Sys.getObject(c) : c;
   
+  // If the container already contains a view, destroy it
+  for (var i = 0; i < xw.ViewManager.openViews.length; i++) {
+    var entry = xw.ViewManager.openViews[i];
+    if (entry.container == container) {
+      entry.view.destroy();
+      xw.ViewManager.openViews.splice(i, 1);
+      break;
+    }
+  }
+  
+  // If anything else is remaining, clear it
   xw.Sys.clearChildren(container);
 
   // If we haven't previously loaded the view, do it now
@@ -569,7 +589,9 @@ xw.ViewManager.openView = function(viewName, c) {
     if (invalid.length > 0) {
       xw.WidgetManager.loadWidgetsAndOpenView(invalid, viewName, container);      
     } else {
-      xw.ViewManager.createView(viewName).render(container);
+      var view = xw.ViewManager.createView(viewName);
+      xw.ViewManager.openViews.push({container: container, view: view});
+      view.render(container);
     }    
   }
 };
@@ -778,8 +800,7 @@ xw.WidgetManager.loadPendingWidgets = function() {
     // Render any pending views
     while (xw.WidgetManager.pendingViews.length > 0) {
       var v = xw.WidgetManager.pendingViews.shift();      
-      var view = xw.ViewManager.createView(v.viewName);
-      view.render(v.container); 
+      xw.ViewManager.openView(v.viewName, v.container);
     }
   }
 };
@@ -1009,6 +1030,10 @@ xw.Widget.prototype.renderChildren = function(container) {
   }
 };
 
+xw.Widget.prototype.destroy = function() {
+  // NO-OP
+};
+
 xw.Widget.prototype.toString = function() {
   return "xw.Widget";
 };
@@ -1155,6 +1180,23 @@ xw.View.prototype.addDataSource = function(ds) {
   if (!xw.Sys.isUndefined(ds.id)) {
     this.registerWidget(ds);
   }
+};
+
+xw.View.prototype.destroy = function() {
+  if (this.container != null) {
+    if (!xw.Sys.isUndefined(this.children)) {
+      this.destroyChildren(this.children);
+    }
+  }
+};
+
+xw.View.prototype.destroyChildren = function(children) {
+  for (var i = 0; i < children.length; i++) {
+    if (!xw.Sys.isUndefined(children[i].children)) {
+      this.destroyChildren(children[i].children);
+    }
+    children[i].destroy();
+  };
 };
 
 xw.View.prototype.toString = function() {
