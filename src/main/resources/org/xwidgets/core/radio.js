@@ -13,7 +13,7 @@ org.xwidgets.core.Radio.prototype = new xw.Widget();
   
 org.xwidgets.core.Radio.prototype.render = function(container) {
   if (this.control == null) {
-    this.name = this.id === null ? xw.Sys.uid() : this.id;
+    this.name = this.id === null ? "radio_" + xw.Sys.uid() : this.id + "_radio";
     this.control = document.createElement("div");
     container.appendChild(this.control);
     

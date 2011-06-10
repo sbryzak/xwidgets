@@ -99,6 +99,22 @@ xw.Sys.loadSource = function(url, callback) {
   req.send(null);
 };
 
+xw.Sys.basePath = null;
+xw.Sys.getBasePath = function() {
+  if (xw.Sys.basePath === null) {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i++) {
+      var match = scripts[i].src.match( /(^|.*[\\\/])xw.js(?:\?.*)?$/i );
+      if (match) {
+        xw.Sys.basePath = match[1];
+        break;
+      }
+    }
+  }
+  
+  return xw.Sys.basePath;
+};
+
 xw.Sys.newInstance = function(name) {
   var current, parts, constructorName;
   parts = name.split('.');
@@ -753,7 +769,7 @@ xw.WidgetManager.loadPendingWidgets = function() {
 
     // We do a final check here to see if the class exists before attempting to load it
     if (!xw.Sys.classExists(fqwn)) {
-      var url = xw.getResourceBase() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
+      var url = xw.Sys.getBasePath() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
       xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);    
     } else {
       xw.WidgetManager.loadPendingWidgets();
@@ -1155,15 +1171,6 @@ xw.View.prototype.toString = function() {
 xw.openView = function(viewName, container) {
   xw.ViewManager.openView(viewName, container);
 };
-
-xw.setResourceBase = function(resourceBase) {
-  xw.resourceBase = resourceBase;
-};
-
-xw.getResourceBase = function() {
-  return xw.Sys.isUndefined(xw.resourceBase) ? "" : xw.resourceBase + (xw.Sys.endsWith(xw.resourceBase, "/") ? "" : "/");
-};
-
 
 // 
 // DATA BINDING WIDGETS
