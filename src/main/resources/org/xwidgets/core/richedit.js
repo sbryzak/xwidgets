@@ -6,7 +6,7 @@ org.xwidgets.core.RichEdit = function() {
   this.registerProperty("enableResize", false);
   this.registerProperty("resizeMaxWidth", -1);
   this.control = null;
-  this.editor = null;
+  this.editor = null;  
 };
 
 org.xwidgets.core.RichEdit.prototype = new xw.Widget();
@@ -15,6 +15,20 @@ org.xwidgets.core.RichEdit.prototype.render = function(container) {
   if (this.control == null) {
     this.control = document.createElement("div");  
     container.appendChild(this.control);
+
+    if (xw.Sys.isUndefined(window.CKEDITOR)) {
+      // Load the source for the editor before rendering it
+      var that = this;
+      var cb = function() { that.renderEditor(); };
+      window.CKEDITOR_BASEPATH = xw.Sys.getBasePath() + "ckeditor/";
+      xw.Sys.loadSource(xw.Sys.getBasePath() + "ckeditor/ckeditor.js", cb);
+    } else {
+      this.renderEditor();
+    }
+  }
+};
+
+org.xwidgets.core.RichEdit.prototype.renderEditor = function() {
     var config = {};   
     config.resize_enabled = this.enableResize;
     if (this.resizeMaxWidth != -1) {
@@ -38,7 +52,6 @@ org.xwidgets.core.RichEdit.prototype.render = function(container) {
     ];      
 
     this.editor = CKEDITOR.appendTo(this.control, config, this.value);
-  }
 };
 
 org.xwidgets.core.RichEdit.prototype.destroy = function() {
