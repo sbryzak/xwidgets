@@ -1083,7 +1083,7 @@ xw.Widget.prototype.destroy = function() {
 };
 
 xw.Widget.prototype.toString = function() {
-  return "xw.Widget";
+  return "xw.Widget[" + this.id + "]";
 };
 
 // Represents an XHTML element

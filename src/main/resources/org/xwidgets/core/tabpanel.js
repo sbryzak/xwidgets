@@ -3,6 +3,7 @@ package("org.xwidgets.core");
 org.xwidgets.core.Tab = function() {
   xw.Widget.call(this);
   this.container = null;
+  this.registerProperty("name", null);
 };
 
 org.xwidgets.core.Tab.prototype = new xw.Widget();
@@ -20,6 +21,7 @@ org.xwidgets.core.TabPanel = function() {
   this.control = null;
   this.childContainers = [];
   this.activeTabIndex = 0;
+  this.tabs = [];
 };
 
 org.xwidgets.core.TabPanel.prototype = new xw.Widget();
@@ -31,10 +33,11 @@ org.xwidgets.core.TabPanel.prototype.render = function(container) {
     container.appendChild(this.control);  
         
     for (var i = 0; i < this.children.length; i++) {
-      this.childContainers[i] = document.createElement("div");
-      this.childContainers[i].style.display = (i === 0 ? "block" : "none");
-      this.control.appendChild(this.childContainers[i]);
-      this.children[i].render(this.childContainers[i]);    
+      var tab = {name: this.children[i].name, container: document.createElement("div")};
+      this.tabs[i] = tab;
+      tab.container.style.display = (i === 0 ? "block" : "none");
+      this.control.appendChild(tab.container);      
+      this.children[i].render(tab.container);
     }    
   }       
 };
@@ -52,9 +55,19 @@ org.xwidgets.core.TabPanel.prototype.previous = function() {
 };  
 
 org.xwidgets.core.TabPanel.prototype.setActiveTab = function(idx) {
-  if (idx != this.activeTabIndex && idx >= 0 && idx < this.childContainers.length) {
-    this.childContainers[this.activeTabIndex].style.display = "none";
-    this.childContainers[idx].style.display = "block";
+  if (typeof idx === "string") {
+    for (var i = 0; i < this.tabs.length; i++) {
+      if (this.tabs[i].name == idx) {
+        if (this.activeTabIndex === i) return;
+        this.tabs[this.activeTabIndex].container.style.display = "none";
+        this.tabs[i].container.style.display = "block";
+        this.activeTabIndex = i;
+        return;
+      }    
+    }
+  } else if (idx != this.activeTabIndex && idx >= 0 && idx < this.tabs.length) {
+    this.tabs[this.activeTabIndex].container.style.display = "none";
+    this.tabs[idx].container.style.display = "block";
     this.activeTabIndex = idx;
   }
 };

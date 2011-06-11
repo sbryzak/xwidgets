@@ -43,6 +43,7 @@ org.xwidgets.core.RichEdit.prototype.renderEditor = function() {
     if (this.resizeMaxWidth != -1) {
       config.resize_maxWidth = parseInt(this.resizeMaxWidth);
     }
+    config.extraPlugins = "geshi";
     config.toolbar = "XWidgets";
     config.toolbar_XWidgets = [
 	    //{ name: 'document', items : [ 'Source','-','Save','NewPage','DocProps','Preview','Print','-','Templates' ] },
@@ -57,7 +58,7 @@ org.xwidgets.core.RichEdit.prototype.renderEditor = function() {
 	    '/',
 	    { name: 'styles', items : [ 'Styles','Format','Font','FontSize' ] },
 	    { name: 'colors', items : [ 'TextColor','BGColor' ] },
-	    { name: 'tools', items : [ 'Maximize', 'ShowBlocks','-','About' ] }
+	    { name: 'tools', items : [ 'Maximize', 'ShowBlocks','-','Code', 'About' ] }
     ];      
 
     var that = this;

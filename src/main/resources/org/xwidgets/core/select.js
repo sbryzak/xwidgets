@@ -26,6 +26,13 @@ org.xwidgets.core.Select.prototype.addItem = function(value, label) {
 };
 
 org.xwidgets.core.Select.prototype.removeItem = function(value) {
-  // TODO implement this using the items[] array to locate the option
+  // TODO implement this 
+};
+
+org.xwidgets.core.Select.prototype.getValue = function() {
+  return this.control.options[this.control.selectedIndex].value;
 };
   
+org.xwidgets.core.Select.prototype.toString = function() {
+  return "org.xwidgets.core.Select[" + this.id + "]";
+};
