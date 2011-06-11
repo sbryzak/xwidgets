@@ -1,4 +1,4 @@
-package org.jboss.xwidgets;
+package org.xwidgets;
 
 public class View
 {
