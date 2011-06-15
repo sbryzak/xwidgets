@@ -5,7 +5,7 @@ org.xwidgets.core.RichEdit = function() {
   this.registerProperty("value", null);
   this.registerProperty("enableResize", false);
   this.registerProperty("resizeMaxWidth", -1);
-  this.registerEvent("onchange", null);
+  this.registerEvent("onchange");
   this.control = null;
   this.editor = null;  
 

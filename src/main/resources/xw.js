@@ -1167,7 +1167,7 @@ xw.Container.prototype.setLayout = function(layoutName) {
 xw.View = function(viewName) {  
   this.viewName = viewName;
   xw.Container(this);
-  this.registerEvent("afterRender", null);
+  this.registerEvent("afterRender");
   // The container control
   this.container = null;  
   this._registeredWidgets = {};

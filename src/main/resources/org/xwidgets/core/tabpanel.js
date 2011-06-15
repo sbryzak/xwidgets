@@ -18,6 +18,7 @@ org.xwidgets.core.Tab.prototype.render = function(container) {
 org.xwidgets.core.TabPanel = function() {
   xw.Widget.call(this);
   this.registerProperty("styleClass", "");
+  this.registerEvent("beforeTabChanged");
   this.control = null;
   this.childContainers = [];
   this.activeTabIndex = 0;
@@ -55,6 +56,10 @@ org.xwidgets.core.TabPanel.prototype.previous = function() {
 };  
 
 org.xwidgets.core.TabPanel.prototype.setActiveTab = function(idx) {
+  if (!xw.Sys.isUndefined(this.beforeTabChanged)) {
+    this.beforeTabChanged.invoke(this);
+  }
+
   if (typeof idx === "string") {
     for (var i = 0; i < this.tabs.length; i++) {
       if (this.tabs[i].name == idx) {
