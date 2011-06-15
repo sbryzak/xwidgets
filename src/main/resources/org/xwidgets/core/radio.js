@@ -23,7 +23,8 @@ org.xwidgets.core.Radio.prototype.render = function(container) {
 
 org.xwidgets.core.Radio.prototype.addItem = function(value, label) {
   var inp = document.createElement("input");
-  inp.id = "";
+  var id = "radio_" + xw.Sys.uid();
+  inp.id = id;
   inp.type = "radio";
   inp.name = this.name;
   inp.value = value;  
@@ -34,7 +35,7 @@ org.xwidgets.core.Radio.prototype.addItem = function(value, label) {
   }
   
   var lbl = document.createElement("label");
-  lbl.htmlFor = "";
+  lbl.htmlFor = id;
   lbl.appendChild(document.createTextNode(label));
   
   if (this.orientation === "horizontal") {

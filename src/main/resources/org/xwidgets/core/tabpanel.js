@@ -21,7 +21,7 @@ org.xwidgets.core.TabPanel = function() {
   this.registerProperty("styleClass", "");
   this.registerEvent("beforeScroll");
   this.control = null;
-  this.activeTabIndex = 0;
+  this.activeTab = null;
   this.tabs = [];
 };
 
@@ -36,7 +36,13 @@ org.xwidgets.core.TabPanel.prototype.render = function(container) {
     for (var i = 0; i < this.children.length; i++) {
       var tab = {control: this.children[i], container: document.createElement("div"), };
       this.tabs[i] = tab;
-      tab.container.style.display = (i === 0 ? "block" : "none");
+      if (i === 0) {
+        this.activeTab = tab;
+        tab.container.style.display = "block";
+      } else {
+        tab.container.style.display = "none";
+      }
+
       this.control.appendChild(tab.container);      
       this.children[i].render(tab.container);
     }    
@@ -48,7 +54,8 @@ org.xwidgets.core.TabPanel.prototype.isTabEnabled = function(idx) {
 };
 
 org.xwidgets.core.TabPanel.prototype.setEnabled = function(idx, value) {
-  this.tabs[idx].control.enabled = value;
+  var tab = (typeof idx === "string") ? this.getTabByName(idx) : this.tabs[idx];
+  if (tab != null) tab.control.enabled = value;
 };
 
 org.xwidgets.core.TabPanel.prototype.next = function() {
@@ -56,8 +63,10 @@ org.xwidgets.core.TabPanel.prototype.next = function() {
     this.beforeScroll.invoke(this);
   }
   
-  if (this.activeTabIndex < this.tabs.length - 1) {
-    for (var i = this.activeTabIndex + 1; i < this.tabs.length; i++) {
+  var idx = this.getActiveTabIndex();
+  
+  if (idx < this.tabs.length - 1) {
+    for (var i = idx + 1; i < this.tabs.length; i++) {
       if (this.isTabEnabled(i)) {
         this.setActiveTab(i);
         break;
@@ -70,9 +79,11 @@ org.xwidgets.core.TabPanel.prototype.previous = function() {
   if (!xw.Sys.isUndefined(this.beforeScroll)) {
     this.beforeScroll.invoke(this);
   }
-
-  if (this.activeTabIndex > 0) {
-    for (var i = this.activeTabIndex - 1; i >= 0; i--) {
+  
+  var idx = this.getActiveTabIndex();
+  
+  if (idx > 0) {
+    for (var i = idx - 1; i >= 0; i--) {
       if (this.isTabEnabled(i)) {
         this.setActiveTab(i);
         break;
@@ -81,21 +92,34 @@ org.xwidgets.core.TabPanel.prototype.previous = function() {
   }
 };  
 
-org.xwidgets.core.TabPanel.prototype.setActiveTab = function(idx) {
-  if (typeof idx === "string") {
-    for (var i = 0; i < this.tabs.length; i++) {
-      if (this.tabs[i].control.name == idx) {
-        if (this.activeTabIndex === i) return;
-        this.tabs[this.activeTabIndex].container.style.display = "none";
-        this.tabs[i].container.style.display = "block";
-        this.activeTabIndex = i;
-        return;
-      }    
+org.xwidgets.core.TabPanel.prototype.getTabByName = function(name) {
+  for (var i = 0; i < this.tabs.length; i++) {
+    if (this.tabs[i].control.name == name) {
+      return this.tabs[i];
     }
-  } else if (idx != this.activeTabIndex && idx >= 0 && idx < this.tabs.length) {
-    this.tabs[this.activeTabIndex].container.style.display = "none";
-    this.tabs[idx].container.style.display = "block";
-    this.activeTabIndex = idx;
   }
+};
+
+org.xwidgets.core.TabPanel.prototype.getActiveTabIndex = function() {
+  for (var i = 0; i < this.tabs.length; i++) {
+    if (this.tabs[i] == this.activeTab) return i;    
+  }
+  return -1;
+};
+
+org.xwidgets.core.TabPanel.prototype.setActiveTab = function(idx) {
+  var tab = null;
+
+  if (typeof idx === "string") {
+    tab = this.getTabByName(idx);
+  } else if (idx != this.getActiveTabIndex() && idx >= 0 && idx < this.tabs.length) {
+    tab = this.tabs[idx];
+  }
+  
+  if (tab != null && tab != this.activeTab) {
+    this.activeTab.container.style.display = "none";
+    tab.container.style.display = "block";
+    this.activeTab = tab;
+  }  
 };
   
