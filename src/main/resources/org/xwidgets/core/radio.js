@@ -1,7 +1,7 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.Radio = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.registerProperty("orientation", "horizontal");
   this.registerProperty("labelPosition", "left");
   this.control = null;
@@ -9,7 +9,7 @@ org.xwidgets.core.Radio = function() {
   this.controls = [];
 };
 
-org.xwidgets.core.Radio.prototype = new xw.Widget();
+org.xwidgets.core.Radio.prototype = new xw.Visual();
   
 org.xwidgets.core.Radio.prototype.render = function(container) {
   if (this.control == null) {

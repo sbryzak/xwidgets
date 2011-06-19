@@ -1,12 +1,12 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.Label = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.registerProperty("value", "");
   this.control = null;
 };
 
-org.xwidgets.core.Label.prototype = new xw.Widget();
+org.xwidgets.core.Label.prototype = new xw.Visual();
   
 org.xwidgets.core.Label.prototype.render = function(container) {
   if (this.control == null) {

@@ -1,14 +1,14 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.SelectItems = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.registerProperty("dataSource", null); 
   this.registerProperty("var", null);
   this.registerProperty("itemValue", null);
   this.registerProperty("itemLabel", null);
 };
 
-org.xwidgets.core.SelectItems.prototype = new xw.Widget();
+org.xwidgets.core.SelectItems.prototype = new xw.Visual();
   
 org.xwidgets.core.SelectItems.prototype.render = function() {
   if (this.datasource !== null) {  

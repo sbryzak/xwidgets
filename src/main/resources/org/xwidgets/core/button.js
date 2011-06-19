@@ -1,14 +1,14 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.Button = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.control = null;
   this.registerProperty("label", null);
   this.registerProperty("styleClass", null);
   this.registerEvent("onclick", null);
 };
 
-org.xwidgets.core.Button.prototype = new xw.Widget();
+org.xwidgets.core.Button.prototype = new xw.Visual();
    
 org.xwidgets.core.Button.prototype.render = function(container) {
    if (this.control == null) {

@@ -1,7 +1,7 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.RichEdit = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.registerProperty("value", null);
   this.registerProperty("enableResize", false);
   this.registerProperty("resizeMaxWidth", -1);
@@ -14,7 +14,7 @@ org.xwidgets.core.RichEdit = function() {
   this.length = 0;
 };
 
-org.xwidgets.core.RichEdit.prototype = new xw.Widget();
+org.xwidgets.core.RichEdit.prototype = new xw.Visual();
 
 org.xwidgets.core.RichEdit.prototype.getValue = function() {
   return xw.Sys.isUndefined(this.editor) ? this.value : this.editor.getData();

@@ -65,6 +65,8 @@ xw.Sys.createHttpRequest = function(mimeType) {
 
 //
 // Asynchronously loads the javascript source from the specified url
+//   callback - the callback function to invoke if successful
+//   failCallback - the callback function to invoke if loading the resource failed
 //
 xw.Sys.loadSource = function(url, callback) {
   var req = xw.Sys.createHttpRequest("text/plain");
@@ -83,11 +85,12 @@ xw.Sys.loadSource = function(url, callback) {
         }
         try {
           head.appendChild(e);
+          
+          if (callback) {
+            callback(url);
+          }          
         } catch (err) {
           alert("There was an error loading the script from '" + url + "': " + err.description);
-        }
-        if (callback) {
-          callback();
         }
       } else if (req.status === 404) {
         alert("404 error: the requested resource '" + url + "' could not be found.");
@@ -818,13 +821,30 @@ xw.WidgetManager.pendingViews = [];
 xw.WidgetManager.pendingWidgets = [];
 
 //
+// Stores a list of the widgets that we've already loaded (so we don't load them more than once)
+//
+xw.WidgetManager.loadedWidgets = [];
+
+xw.WidgetManager.isWidgetLoaded = function(fqwn) {
+  for (var i = 0; i < xw.WidgetManager.loadedWidgets.length; i++) {
+    if (xw.WidgetManager.loadedWidgets[i] == fqwn) return true;
+  }
+  return false;
+};
+
+//
 // Load the widgets specified in the widgets array parameter, then open the specified view in
 // the specified container 
 //
 xw.WidgetManager.loadWidgetsAndOpenView = function(widgets, viewName, container) {
   var i;
   for (i = 0; i < widgets.length; i++) {
-    xw.WidgetManager.pendingWidgets.push(widgets[i]);
+    if (!xw.WidgetManager.isWidgetLoaded(widgets[i])) {
+      xw.WidgetManager.pendingWidgets.push(widgets[i]);
+    } else {
+      alert("Could not open view [" + viewName + "] as there was an error loading widget [" + widgets[i] + "]");
+      return;
+    }
   }
   xw.WidgetManager.pendingViews.push({viewName: viewName, container: container});
   xw.WidgetManager.loadPendingWidgets();
@@ -836,11 +856,12 @@ xw.WidgetManager.loadWidgetsAndOpenView = function(widgets, viewName, container)
 xw.WidgetManager.loadPendingWidgets = function() {
   if (xw.WidgetManager.pendingWidgets.length > 0) {
     var fqwn = xw.WidgetManager.pendingWidgets.shift();
-
+    
     // We do a final check here to see if the class exists before attempting to load it
     if (!xw.Sys.classExists(fqwn)) {
       var url = xw.Sys.getBasePath() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
-      xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);    
+      xw.WidgetManager.loadedWidgets.push(fqwn);
+      xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);
     } else {
       xw.WidgetManager.loadPendingWidgets();
     }
@@ -1070,10 +1091,16 @@ xw.Widget.prototype.registerEvent = function(eventName) {
 xw.Widget.prototype.renderChildren = function(container) {
   var i;
   for (i = 0; i < this.children.length; i++) {
-    if (xw.Sys.isUndefined(this.children[i].render)) {
-      throw "Error - widget [" + this.children[i] + "] does not provide a render() method";
+    if (this.children[i] instanceof xw.Visual) {  
+      if (xw.Sys.isUndefined(this.children[i].render)) {
+        throw "Error - widget [" + this.children[i] + "] extending xw.Visual does not provide a render() method";
+      } else {
+        this.children[i].render(container);       
+      }
+    } else if (this.children[i] instanceof xw.NonVisual) {      
+      this.children[i].open();
     } else {
-      this.children[i].render(container);       
+      throw "Error - unrecognized widget [" + this.children[i] + "] encountered in view definition";
     }
   }
 };
@@ -1086,15 +1113,27 @@ xw.Widget.prototype.toString = function() {
   return "xw.Widget[" + this.id + "]";
 };
 
+xw.Visual = function() {
+  xw.Widget.call(this);
+};
+
+xw.Visual.prototype = new xw.Widget();
+
+xw.NonVisual = function() {
+  xw.Widget.call(this);
+};
+
+xw.NonVisual.prototype = new xw.Widget();
+
 // Represents an XHTML element
 xw.XHtml = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.tagName = null; 
   this.control = null;
   this.attributes = {};  
 };
 
-xw.XHtml.prototype = new xw.Widget();
+xw.XHtml.prototype = new xw.Visual();
 
 xw.XHtml.prototype.render = function(container) {
   this.control = document.createElement(this.tagName);
@@ -1120,13 +1159,13 @@ xw.XHtml.prototype.toString = function() {
 
 // Represents plain ol' text
 xw.Text = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   delete children;
   this.text = ""; 
   this.control = null;
 };
 
-xw.Text.prototype = new xw.Widget();
+xw.Text.prototype = new xw.Visual();
 
 xw.Text.prototype.render = function(container) {
   this.control = document.createElement("span");
@@ -1140,12 +1179,12 @@ xw.Text.prototype.toString = function() {
 };
 
 xw.Container = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   // FIXME hard coded the layout for now
   this.layout = new xw.BorderLayout();
 }
 
-xw.Container.prototype = new xw.Widget();
+xw.Container.prototype = new xw.Visual();
 
 xw.Container.prototype.setLayout = function(layoutName) {
   // TODO rewrite this entire function
@@ -1266,12 +1305,12 @@ xw.openView = function(viewName, container) {
 // DATA BINDING WIDGETS
 //
 xw.DataSource = function() {
-  xw.Widget.call(this);
+  xw.NonVisual.call(this);
   this.registerProperty("dataSet", null);
   this.subscribers = [];
 };
 
-xw.DataSource.prototype = new xw.Widget();
+xw.DataSource.prototype = new xw.NonVisual();
 
 xw.DataSource.prototype.setDataSet = function(dataSet) {
   this.dataSet = dataSet;

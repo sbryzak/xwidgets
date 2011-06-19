@@ -1,14 +1,14 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.Link = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.registerProperty("caption", "");
   this.registerProperty("styleClass", "");
   this.registerEvent("onclick", null);
   this.control = null;
 };
 
-org.xwidgets.core.Link.prototype = new xw.Widget();
+org.xwidgets.core.Link.prototype = new xw.Visual();
   
 org.xwidgets.core.Link.prototype.render = function(container) {
   if (this.control == null) {  

@@ -1,12 +1,12 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.InputText = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.registerProperty("value", null);
   this.control = null;
 };
 
-org.xwidgets.core.InputText.prototype = new xw.Widget();
+org.xwidgets.core.InputText.prototype = new xw.Visual();
    
 org.xwidgets.core.InputText.prototype.render = function(container) {
    if (this.control == null) {

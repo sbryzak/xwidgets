@@ -1,13 +1,13 @@
 package("org.xwidgets.core");
 
 org.xwidgets.core.Tab = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.container = null;
   this.registerProperty("name", null);
   this.registerProperty("enabled", true);
 };
 
-org.xwidgets.core.Tab.prototype = new xw.Widget();
+org.xwidgets.core.Tab.prototype = new xw.Visual();
 
 org.xwidgets.core.Tab.prototype.render = function(container) {
   if (this.container == null) {
