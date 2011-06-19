@@ -15,3 +15,11 @@ org.xwidgets.core.InputText.prototype.render = function(container) {
      container.appendChild(this.control);
    }    
 };
+
+org.xwidgets.core.InputText.prototype.getValue = function() {
+  return this.control.value;
+};
+
+org.xwidgets.core.InputText.prototype.toString = function() {
+  return "org.xwidgets.core.InputText[" + this.id + "]";
+};
