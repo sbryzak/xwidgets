@@ -85,7 +85,6 @@ org.xwidgets.core.RichEdit.prototype.checkChanged = function(event) {
       this.onchange.invoke();
     };  
   }
-
 };
 
 org.xwidgets.core.RichEdit.prototype.destroy = function() {

@@ -17,7 +17,7 @@ org.xwidgets.core.Tab.prototype.render = function(container) {
 };
 
 org.xwidgets.core.TabPanel = function() {
-  xw.Widget.call(this);
+  xw.Visual.call(this);
   this.registerProperty("styleClass", "");
   this.registerEvent("beforeScroll");
   this.control = null;
@@ -25,7 +25,7 @@ org.xwidgets.core.TabPanel = function() {
   this.tabs = [];
 };
 
-org.xwidgets.core.TabPanel.prototype = new xw.Widget();
+org.xwidgets.core.TabPanel.prototype = new xw.Visual();
   
 org.xwidgets.core.TabPanel.prototype.render = function(container) {
   if (this.control == null) {  
@@ -122,4 +122,7 @@ org.xwidgets.core.TabPanel.prototype.setActiveTab = function(idx) {
     this.activeTab = tab;
   }  
 };
-  
+
+org.xwidgets.core.TabPanel.prototype.toString = function() {
+  return "org.xwidgets.core.TabPanel[" + this.id + "]";
+};

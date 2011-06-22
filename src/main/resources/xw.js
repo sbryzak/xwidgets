@@ -84,14 +84,14 @@ xw.Sys.loadSource = function(url, callback) {
           html.insertBefore(head, html.firstChild);
         }
         try {
-          head.appendChild(e);
-          
-          if (callback) {
-            callback(url);
-          }          
+          head.appendChild(e);           
         } catch (err) {
-          alert("There was an error loading the script from '" + url + "': " + err.description);
+          alert("There was an error loading the script from '" + url + "': " + err);
+          return;
         }
+        if (callback) {
+          callback(url);
+        }               
       } else if (req.status === 404) {
         alert("404 error: the requested resource '" + url + "' could not be found.");
       }
@@ -324,6 +324,8 @@ xw.LocalStorage.getKey = function(idx) {
 //
 
 xw.EL = {};
+xw.EL.resolvers = [];
+xw.EL.bindings = [];
 
 xw.EL.regex = /#{([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/;
 
@@ -331,16 +333,62 @@ xw.EL.isExpression = function(expr) {
   return xw.EL.regex.test(expr);
 };
 
+xw.EL.registerResolver = function(resolver) {
+  xw.EL.resolvers.push(resolver);
+};
+
+xw.EL.unregisterResolver = function(resolver) {
+  for (var i = 0; i < xw.EL.resolvers.length; i++) {
+    if (xw.EL.resolvers[i] == resolver) {
+      xw.EL.resolvers.splice(i, 1);
+      break;
+    }
+  }
+};
+
+//
+// Invoked by an EL resolver when its value changes.  The resolver will invoke this
+// method with the rootName parameter containing the name of the root of the EL expression.
+// Any bindings that have the same root name will be evaluated.
+//
+xw.EL.notify = function(rootName) {
+  for (var i = 0; i < xw.EL.bindings.length; i++) { 
+    var binding = xw.EL.bindings[i];
+    if (xw.EL.rootName(binding.expression) == rootName) {    
+      binding.value = xw.EL.eval(binding.widget.view, binding.expression);
+      xw.Sys.setObjectProperty(binding.widget, binding.propertyName, binding.value);    
+    }
+  }
+};
+
+xw.EL.createBinding = function(widget, propertyName, expr) {
+  var value = xw.EL.eval(widget.view, expr);
+
+  xw.EL.bindings.push({widget: widget, propertyName: propertyName, expression: expr, value: value});
+
+  if (!xw.Sys.isUndefined(value)) {  
+    xw.Sys.setObjectProperty(widget, propertyName, value);
+  }
+};
+
 xw.EL.eval = function(view, expr, locals) {
   var parts = xw.EL.regex(expr)[1].split(".");
   var root = null;
         
   if (!xw.Sys.isUndefined(locals) && !xw.Sys.isUndefined(locals[parts[0]])) {
-    root = locals[parts[0]];
-  } else if (!xw.Sys.isUndefined(view._registeredWidgets[parts[0]])) {
+    root = locals[parts[0]];    
+  } else if (!xw.Sys.isUndefined(view._registeredWidgets[parts[0]])) {  
     root = view._registeredWidgets[parts[0]];
   } else {
-    // TODO implement extensible framework for custom variable resolvers    
+    for (var i = 0; i < xw.EL.resolvers.length; i++) {    
+      if (xw.EL.resolvers[i].canResolve(parts[0])) {
+        root = xw.EL.resolvers[i].resolve(parts[0]);
+        break;
+      }
+    }
+  }
+  
+  if (root == null) {
     return undefined;
   }
   
@@ -349,6 +397,10 @@ xw.EL.eval = function(view, expr, locals) {
     value = value[parts[i]];
   }
   return value;  
+};
+
+xw.EL.rootName = function(expr) {
+  return xw.EL.regex(expr)[1].split(".")[0];
 };
 
 //
@@ -430,14 +482,6 @@ xw.Map = function() {
 xw.EventNode = function(type, script) {
   this.type = type;
   this.script = script;
-};
-
-//
-// Contains metadata about a datasource
-//
-xw.DataSourceNode = function(id, dataSet) {
-  this.id = id;
-  this.dataSet = dataSet;
 };
 
 //
@@ -539,9 +583,6 @@ xw.ViewParser.prototype.parseChildNodes = function(children) {
           if (event) {              
             nodes.push(event);
           }
-        } else if (e.namespaceURI == xw.CORE_NAMESPACE && e.localName === "dataSource") {
-          var ds = new xw.DataSourceNode(e.getAttribute("id"), e.getAttribute("dataSet"));
-          nodes.push(ds);
         } else {
           nodes.push(new xw.WidgetNode(this.getFQCN(e), this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
         }          
@@ -676,24 +717,8 @@ xw.ViewManager.parseChildren = function(view, childNodes, parentWidget) {
       widget.view = view;
       
       // Set the widget's attributes
-      for (var p in c.attributes) {
-        // Set the id by calling the setId() method
-        if (p === "id") {
-          widget.setId(c.attributes[p]);
-        } else if (xw.EL.isExpression(c.attributes[p])) {
-          // We're dealing with an EL expression, try to evaluate it here and if we fail, 
-          // store it for post-create-view evaluation
-          var value = xw.EL.eval(view, c.attributes[p]);
-          if (!xw.Sys.isUndefined(value)) {
-            xw.Sys.setObjectProperty(widget, p, value);
-          } else {
-            xw.Sys.setObjectProperty(widget, p, c.attributes[p]);
-            // TODO store the unresolvable expression somewhere to evaluate it later on
-          }
-        // otherwise set the attribute value directly
-        } else {      
-          xw.Sys.setObjectProperty(widget, p, c.attributes[p]);
-        }
+      for (var p in c.attributes) { 
+        xw.Sys.setObjectProperty(widget, p, c.attributes[p]);
       }
       
       widgets.push(widget);
@@ -707,16 +732,6 @@ xw.ViewManager.parseChildren = function(view, childNodes, parentWidget) {
       action.script = c.script;
       action.view = view;
       parentWidget[c.type] = action;
-    } else if (c instanceof xw.DataSourceNode) {
-      var ds = new xw.DataSource();
-      ds.id = c.id;
-
-      // TODO fix this, it's a hack.. in fact we need to overhaul the entire 
-      // system for setting object properties 
-      var dataSet = xw.EL.eval(view, c.dataSet);
-      xw.Sys.setObjectProperty(ds, "dataSet", dataSet);
-      
-      view.addDataSource(ds);
     } else if (c instanceof xw.XHtmlNode) {
       widget = new xw.XHtml();      
       widget.setParent(parentWidget);
@@ -1100,7 +1115,7 @@ xw.Widget.prototype.renderChildren = function(container) {
     } else if (this.children[i] instanceof xw.NonVisual) {      
       this.children[i].open();
     } else {
-      throw "Error - unrecognized widget [" + this.children[i] + "] encountered in view definition";
+      throw "Error - unrecognized widget type [" + this.children[i] + "] encountered in view definition";
     }
   }
 };
@@ -1209,8 +1224,7 @@ xw.View = function(viewName) {
   this.registerEvent("afterRender");
   // The container control
   this.container = null;  
-  this._registeredWidgets = {};
-  this.dataSources = [];
+  this._registeredWidgets = {};  
   delete this.parent;
 };
 
@@ -1262,13 +1276,6 @@ xw.View.prototype.unregisterWidget = function(widget) {
   }
 };
 
-xw.View.prototype.addDataSource = function(ds) {
-  this.dataSources.push(ds);
-  if (!xw.Sys.isUndefined(ds.id)) {
-    this.registerWidget(ds);
-  }
-};
-
 xw.View.prototype.destroy = function() {
   if (this.container != null) {
     if (!xw.Sys.isUndefined(this.children)) {
@@ -1301,31 +1308,4 @@ xw.openView = function(viewName, container) {
   xw.ViewManager.openView(viewName, container);
 };
 
-// 
-// DATA BINDING WIDGETS
-//
-xw.DataSource = function() {
-  xw.NonVisual.call(this);
-  this.registerProperty("dataSet", null);
-  this.subscribers = [];
-};
-
-xw.DataSource.prototype = new xw.NonVisual();
-
-xw.DataSource.prototype.setDataSet = function(dataSet) {
-  this.dataSet = dataSet;
-  this.dataSet.dataSource = this;
-};
-
-xw.DataSource.prototype.subscribe = function(subscriber) {
-  this.subscribers.push(subscriber);
-  this.set
-};
-
-xw.DataSource.prototype.notify = function() {
-  this.active = true;
-  for (var i = 0; i < this.subscribers.length; i++) {
-    this.subscribers[i].notify();
-  }
-};
 

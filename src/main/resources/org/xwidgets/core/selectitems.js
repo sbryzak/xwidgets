@@ -2,7 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.SelectItems = function() {
   xw.Visual.call(this);
-  this.registerProperty("dataSource", null); 
+  this.registerProperty("value", null); 
   this.registerProperty("var", null);
   this.registerProperty("itemValue", null);
   this.registerProperty("itemLabel", null);
@@ -11,25 +11,26 @@ org.xwidgets.core.SelectItems = function() {
 org.xwidgets.core.SelectItems.prototype = new xw.Visual();
   
 org.xwidgets.core.SelectItems.prototype.render = function() {
-  if (this.datasource !== null) {  
-    this.dataSource.subscribe(this);
-    this.renderOptions();
-  }       
+  this.renderOptions();
 };
 
 org.xwidgets.core.SelectItems.prototype.renderOptions = function() {
-  if (this.dataSource.dataSet.isActive()) {
-    for (var i = 0; i < this.dataSource.dataSet.values.length; i++) {
-      var value = this.dataSource.dataSet.values[i];
-      
+  if (this.value != null) {
+    for (var i = 0; i < this.value.length; i++) {     
       var locals = {}
-      locals[this["var"]] = value;
-      this.parent.addItem(xw.EL.eval(this.view, this.itemValue, locals), xw.EL.eval(this.view, this.itemLabel, locals));
+      locals[this["var"]] = this.value[i];
+      this.parent.addItem(xw.EL.eval(this.view, this.itemValue, locals), 
+        xw.EL.eval(this.view, this.itemLabel, locals), this.value[i]);
     }
   }
 };
 
-org.xwidgets.core.SelectItems.prototype.notify = function() {
-  this.renderOptions();
+org.xwidgets.core.SelectItems.prototype.setValue = function(value) {
+  if (xw.EL.isExpression(value)) {
+    xw.EL.createBinding(this, "value", value);
+  } else {
+    this.value = value;
+    this.renderOptions();
+  }
 };
-  
+
