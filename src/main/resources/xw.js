@@ -355,7 +355,7 @@ xw.EL.notify = function(rootName) {
   for (var i = 0; i < xw.EL.bindings.length; i++) { 
     var binding = xw.EL.bindings[i];
     if (xw.EL.rootName(binding.expression) == rootName) {    
-      binding.value = xw.EL.eval(binding.widget.view, binding.expression);
+      binding.value = xw.EL.eval(binding.widget, binding.expression);
       xw.Sys.setObjectProperty(binding.widget, binding.propertyName, binding.value);    
     }
   }
@@ -364,22 +364,37 @@ xw.EL.notify = function(rootName) {
 xw.EL.createBinding = function(widget, propertyName, expr) {
   var binding = {widget: widget, propertyName: propertyName, expression: expr};
   xw.EL.bindings.push(binding);
-  xw.EL.eval(widget.view, expr);
+  xw.EL.eval(widget, expr);
 };
 
-xw.EL.eval = function(view, expr, locals) {
+xw.EL.eval = function(widget, expr) {
   var parts = xw.EL.regex(expr)[1].split(".");
   var root = null;
         
-  if (!xw.Sys.isUndefined(locals) && !xw.Sys.isUndefined(locals[parts[0]])) {
-    root = locals[parts[0]];    
-  } else if (!xw.Sys.isUndefined(view._registeredWidgets[parts[0]])) {  
-    root = view._registeredWidgets[parts[0]];
-  } else {
-    for (var i = 0; i < xw.EL.resolvers.length; i++) {    
-      if (xw.EL.resolvers[i].canResolve(parts[0])) {
-        root = xw.EL.resolvers[i].resolve(parts[0]);
+  // First we walk up the component tree to see if the variable can be resolved within the widget's hierarchy
+  var w = widget;
+  while (w != null && !(w instanceof xw.View)) {
+    if (!xw.Sys.isUndefined(w.resolve) && (typeof w.resolve == "function")) {
+      var v = w.resolve(parts[0]);
+      if (v != undefined) {
+        root = v;
         break;
+      }
+    }
+    w = w.parent;    
+  } 
+  
+  if (root == null) {
+    // Next we check if there are any named widgets within the same view that match        
+    if (!xw.Sys.isUndefined(widget.view._registeredWidgets[parts[0]])) {  
+      root = widget.view._registeredWidgets[parts[0]];
+    // Last, we check all of the registered EL resolvers
+    } else {
+      for (var i = 0; i < xw.EL.resolvers.length; i++) {    
+        if (xw.EL.resolvers[i].canResolve(parts[0])) {
+          root = xw.EL.resolvers[i].resolve(parts[0]);
+          break;
+        }
       }
     }
   }

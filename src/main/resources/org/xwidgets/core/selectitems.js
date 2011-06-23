@@ -7,6 +7,8 @@ org.xwidgets.core.SelectItems = function() {
   this.registerProperty("itemValue", null);
   this.registerProperty("itemLabel", null);
   this.rendered = false;
+
+  this.currentItem = null;
 };
 
 org.xwidgets.core.SelectItems.prototype = new xw.Visual();
@@ -18,12 +20,17 @@ org.xwidgets.core.SelectItems.prototype.render = function() {
 
 org.xwidgets.core.SelectItems.prototype.renderOptions = function() {
   if (this.value != null) {
-    for (var i = 0; i < this.value.length; i++) {     
-      var locals = {}
-      locals[this["var"]] = this.value[i];
-      this.parent.addItem(xw.EL.eval(this.view, this.itemValue, locals), 
-        xw.EL.eval(this.view, this.itemLabel, locals), this.value[i]);
+    for (var i = 0; i < this.value.length; i++) {
+      this.currentItem = this.value[i];
+      this.parent.addItem(xw.EL.eval(this, this.itemValue), 
+        xw.EL.eval(this, this.itemLabel), this.value[i]);
     }
+  }
+};
+
+org.xwidgets.core.SelectItems.prototype.resolve = function(name) {
+  if (name == this.var) {
+    return this.currentItem;
   }
 };
 
