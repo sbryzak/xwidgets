@@ -362,13 +362,9 @@ xw.EL.notify = function(rootName) {
 };
 
 xw.EL.createBinding = function(widget, propertyName, expr) {
-  var value = xw.EL.eval(widget.view, expr);
-
-  xw.EL.bindings.push({widget: widget, propertyName: propertyName, expression: expr, value: value});
-
-  if (!xw.Sys.isUndefined(value)) {  
-    xw.Sys.setObjectProperty(widget, propertyName, value);
-  }
+  var binding = {widget: widget, propertyName: propertyName, expression: expr};
+  xw.EL.bindings.push(binding);
+  xw.EL.eval(widget.view, expr);
 };
 
 xw.EL.eval = function(view, expr, locals) {

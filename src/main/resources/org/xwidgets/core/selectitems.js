@@ -6,12 +6,14 @@ org.xwidgets.core.SelectItems = function() {
   this.registerProperty("var", null);
   this.registerProperty("itemValue", null);
   this.registerProperty("itemLabel", null);
+  this.rendered = false;
 };
 
 org.xwidgets.core.SelectItems.prototype = new xw.Visual();
   
 org.xwidgets.core.SelectItems.prototype.render = function() {
   this.renderOptions();
+  this.rendered = true;
 };
 
 org.xwidgets.core.SelectItems.prototype.renderOptions = function() {
@@ -30,7 +32,9 @@ org.xwidgets.core.SelectItems.prototype.setValue = function(value) {
     xw.EL.createBinding(this, "value", value);
   } else {
     this.value = value;
-    this.renderOptions();
+    if (this.rendered) {
+      this.renderOptions();
+    }
   }
 };
 
