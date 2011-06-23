@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Radio = function() {
   xw.Visual.call(this);
+  this.registerProperty("styleClass", "");
   this.registerProperty("orientation", "horizontal");
   this.registerProperty("labelPosition", "left");
   this.control = null;
@@ -28,6 +29,7 @@ org.xwidgets.core.Radio.prototype.addItem = function(value, label) {
   inp.type = "radio";
   inp.name = this.name;
   inp.value = value;  
+  inp.className = this.styleClass;
   
   // Select the first option
   if (this.controls.length == 0) {

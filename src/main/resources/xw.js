@@ -864,15 +864,17 @@ xw.WidgetManager.isWidgetLoaded = function(fqwn) {
 //
 xw.WidgetManager.loadWidgetsAndOpenView = function(widgets, viewName, container) {
   var i;
+  var pending = [];
   for (i = 0; i < widgets.length; i++) {
     if (!xw.WidgetManager.isWidgetLoaded(widgets[i])) {
       xw.WidgetManager.pendingWidgets.push(widgets[i]);
+      pending.push(widgets[i]);
     } else {
       alert("Could not open view [" + viewName + "] as there was an error loading widget [" + widgets[i] + "]");
       return;
     }
   }
-  xw.WidgetManager.pendingViews.push({viewName: viewName, container: container});
+  xw.WidgetManager.pendingViews.push({viewName: viewName, container: container, pendingWidgets: pending});
   xw.WidgetManager.loadPendingWidgets();
 };
 
@@ -893,10 +895,28 @@ xw.WidgetManager.loadPendingWidgets = function() {
     }
   } else {
     // Render any pending views
-    while (xw.WidgetManager.pendingViews.length > 0) {
+    for (var i = xw.WidgetManager.pendingViews.length - 1; i >= 0; i--) {
+      var v = xw.WidgetManager.pendingViews[i];
+      
+      var pending = false;
+      // Only render the view if all of its widgets have now been loaded
+      for (var j = 0; j < v.pendingWidgets.length; j++) {
+        if (!xw.Sys.classExists(v.pendingWidgets[j])) {
+          pending = true;
+          break;        
+        }
+      }
+      
+      if (!pending) {
+        xw.WidgetManager.pendingViews.splice(i, 1);
+        xw.ViewManager.openView(v.viewName, v.container);
+      }
+    }
+    
+   /* while (xw.WidgetManager.pendingViews.length > 0) {
       var v = xw.WidgetManager.pendingViews.shift();      
       xw.ViewManager.openView(v.viewName, v.container);
-    }
+    }*/
   }
 };
   
