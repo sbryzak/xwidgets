@@ -42,3 +42,4 @@ org.xwidgets.core.Repeat.prototype.setValue = function(value) {
   }
 };
 
+

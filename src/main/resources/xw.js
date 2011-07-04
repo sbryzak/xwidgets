@@ -346,6 +346,14 @@ xw.EL.unregisterResolver = function(resolver) {
   }
 };
 
+xw.EL.destroyViewBindings = function(view) {
+  for (var i = xw.EL.bindings.length - 1; i >= 0; i--) {
+    if (xw.EL.bindings[i].widget.view == view) {
+      xw.EL.bindings.splice(i, 1);
+    }
+  }
+};
+
 //
 // Invoked by an EL resolver when its value changes.  The resolver will invoke this
 // method with the rootName parameter containing the name of the root of the EL expression.
@@ -1207,7 +1215,7 @@ xw.XHtml.prototype.toString = function() {
 xw.Text = function() {
   xw.Visual.call(this);
   delete children;
-  this.text = ""; 
+  this.registerProperty("text", "");
   this.control = null;
 };
 
@@ -1218,6 +1226,10 @@ xw.Text.prototype.render = function(container) {
   this.textNode = document.createTextNode(this.text);
   this.control.appendChild(this.textNode);  
   container.appendChild(this.control);
+};
+
+xw.Text.prototype.setText = function(value) {
+  this.text = value;
 };
 
 xw.Text.prototype.toString = function() {
@@ -1308,6 +1320,8 @@ xw.View.prototype.unregisterWidget = function(widget) {
 };
 
 xw.View.prototype.destroy = function() {
+  xw.EL.destroyViewBindings(this);
+
   if (this.container != null) {
     if (!xw.Sys.isUndefined(this.children)) {
       this.destroyChildren(this.children);
