@@ -17,6 +17,7 @@ org.xwidgets.core.Repeat.prototype.render = function(container) {
 
 org.xwidgets.core.Repeat.prototype.renderChildren = function() {
   if (this.value != null) {
+    // TODO clone the children
     for (var i = 0; i < this.value.length; i++) {
       this.currentItem = this.value[i];
       

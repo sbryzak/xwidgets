@@ -325,12 +325,19 @@ xw.LocalStorage.getKey = function(idx) {
 
 xw.EL = {};
 xw.EL.resolvers = [];
+
+// Array of {widget: widget, propertyName: propertyName (or callback), expression: expr};
 xw.EL.bindings = [];
 
-xw.EL.regex = /#{([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/;
+// This is a function because some versions of some browsers cache the regex object,
+// so we need to create a new instance each time for cross-browser compatibility
+xw.EL.regex = function(expr) {  
+  return (typeof expr == "string") ? /#{([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/g.exec(expr) :
+    /#{([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/g;
+};
 
 xw.EL.isExpression = function(expr) {
-  return xw.EL.regex.test(expr);
+  return xw.EL.regex().test(expr);
 };
 
 xw.EL.registerResolver = function(resolver) {
@@ -338,7 +345,7 @@ xw.EL.registerResolver = function(resolver) {
 };
 
 xw.EL.unregisterResolver = function(resolver) {
-  for (var i = 0; i < xw.EL.resolvers.length; i++) {
+  for (var i = xw.EL.resolvers.length - 1; i >= 0; i--) {
     if (xw.EL.resolvers[i] == resolver) {
       xw.EL.resolvers.splice(i, 1);
       break;
@@ -364,19 +371,38 @@ xw.EL.notify = function(rootName) {
     var binding = xw.EL.bindings[i];
     if (xw.EL.rootName(binding.expression) == rootName) {    
       binding.value = xw.EL.eval(binding.widget, binding.expression);
-      xw.Sys.setObjectProperty(binding.widget, binding.propertyName, binding.value);    
+      if (binding.propertyName) {
+        xw.Sys.setObjectProperty(binding.widget, binding.propertyName, binding.value);    
+      } else if (binding.callback) {
+        binding.callback(binding.value);
+      }
     }
   }
 };
 
-xw.EL.createBinding = function(widget, propertyName, expr) {
-  var binding = {widget: widget, propertyName: propertyName, expression: expr};
+xw.EL.createBinding = function(widget, receiver, expr) {
+  var binding = (typeof receiver == "string") ?
+    {widget: widget, propertyName: receiver, expression: expr} :
+    {widget: widget, callback: receiver, expression: expr};
   xw.EL.bindings.push(binding);
   xw.EL.eval(widget, expr);
 };
 
+xw.EL.clearWidgetBindings = function(widget) {
+  for (var i = xw.EL.bindings.length - 1; i >= 0; i--) {
+    if (xw.EL.bindings[i].widget == widget) {
+      xw.EL.bindings.splice(i, 1);
+    }
+  }
+};
+
 xw.EL.eval = function(widget, expr) {
-  var parts = xw.EL.regex(expr)[1].split(".");
+  var e = xw.EL.regex(expr);
+  if (e === null) {
+    throw "Error evaluating EL - [" + expr + "] is an invalid expression.";
+  }
+
+  var parts = e[1].split(".");
   var root = null;
         
   // First we walk up the component tree to see if the variable can be resolved within the widget's hierarchy
@@ -420,6 +446,17 @@ xw.EL.eval = function(widget, expr) {
 
 xw.EL.rootName = function(expr) {
   return xw.EL.regex(expr)[1].split(".")[0];
+};
+
+xw.EL.interpolate = function(widget, text) {
+  var replaced = text;
+  var expressions = text.match(xw.EL.regex());
+  if (expressions != null) {
+    for (var i = 0; i < expressions.length; i++) {
+      replaced = text.replace(expressions[i], xw.EL.eval(widget, expressions[i]));
+    }
+  }
+  return replaced;
 };
 
 //
@@ -1216,20 +1253,46 @@ xw.Text = function() {
   xw.Visual.call(this);
   delete children;
   this.registerProperty("text", "");
-  this.control = null;
+  this.control = null;  
 };
 
 xw.Text.prototype = new xw.Visual();
 
 xw.Text.prototype.render = function(container) {
   this.control = document.createElement("span");
-  this.textNode = document.createTextNode(this.text);
+  this.textNode = document.createTextNode();
   this.control.appendChild(this.textNode);  
   container.appendChild(this.control);
+  this.renderText();
+};
+
+xw.Text.prototype.renderText = function() {
+  var expressions = this.text.match(xw.EL.regex());
+
+  if (expressions === null) {
+    this.textNode.nodeValue = this.text;      
+  } else {
+    for (var i = 0; i < expressions.length; i++) {
+      // If any of the expressions are undefined, then break out early
+      if (xw.Sys.isUndefined(xw.EL.eval(this, expressions[i]))) return;
+    }
+    this.textNode.nodeValue = xw.EL.interpolate(this, this.text);
+  }
 };
 
 xw.Text.prototype.setText = function(value) {
   this.text = value;
+  
+  xw.EL.clearWidgetBindings(this);
+  
+  var expressions = value.match(xw.EL.regex());
+  if (expressions != null) {
+    for (var i = 0; i < expressions.length; i++) {
+      xw.EL.createBinding(this, this.renderText, expressions[i]);  
+    }
+  }  
+
+  this.renderText();
 };
 
 xw.Text.prototype.toString = function() {
@@ -1331,7 +1394,7 @@ xw.View.prototype.destroy = function() {
 
 xw.View.prototype.destroyChildren = function(children) {
   for (var i = 0; i < children.length; i++) {
-    if (!xw.Sys.isUndefined(children[i].children)) {
+    if (!xw.Sys.isUndefined(children[i].children) && children[i].children.length > 0) {
       this.destroyChildren(children[i].children);
     }
     children[i].destroy();
