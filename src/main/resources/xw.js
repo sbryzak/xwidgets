@@ -145,6 +145,16 @@ xw.Sys.classExists = function(fqcn) {
   return eval("typeof " + fqcn) === "function";
 };
 
+xw.Sys.cloneObject = function(o) {
+  if (o instanceof xw.Widget) return o.clone();
+  if (o == null || typeof(o) != 'object') return o;
+  var n = new o.constructor();
+  for (var key in o) {
+    n[key] = xw.Sys.cloneObject(o[key]);
+  }
+  return n;
+};
+
 xw.Sys.arrayContains = function(arrayVal, value) {
   var i;
   for (i = 0; i < arrayVal.length; i++) {
@@ -560,6 +570,7 @@ xw.XHtmlNode = function(tagName, attributes, children) {
 
 xw.TextNode = function(text) {
   this.text = text; 
+  this.escape = true;
 }
 
 //
@@ -639,6 +650,10 @@ xw.ViewParser.prototype.parseChildNodes = function(children) {
           if (event) {              
             nodes.push(event);
           }
+        } else if (e.namespaceURI === xw.CORE_NAMESPACE && e.localName === "text") {
+          var tn = new xw.TextNode(e.getAttribute("text"));
+          tn.escape = (e.getAttribute("escape") !== "false");
+          nodes.push(tn);
         } else {
           nodes.push(new xw.WidgetNode(this.getFQCN(e), this.getElementAttributes(e), this.parseChildNodes(e.childNodes)));
         }          
@@ -803,6 +818,7 @@ xw.ViewManager.parseChildren = function(view, childNodes, parentWidget) {
       widget.setParent(parentWidget);
       widget.view = view;
       widget.text = c.text;
+      widget.escape = c.escape;
       widgets.push(widget);
     }
   }
@@ -1125,6 +1141,10 @@ xw.Widget = function() {
   this.parent = null;
   this.children = [];  
   
+  // Every widget implementation must provide a property that contains the
+  // fully qualified widget name
+  this._className = null;
+  
   // metadata containing the known properties for this widget
   this._registeredProperties = [];
   
@@ -1200,6 +1220,33 @@ xw.Widget.prototype.destroy = function() {
   // NO-OP
 };
 
+//
+// Makes a cloned copy of the widget.  Any properties that contain
+// references to other widgets will not be cloned, they will just be
+// updated with a reference to that widget
+//
+xw.Widget.prototype.clone = function(parent) {
+  var o = xw.Sys.newInstance(this._className);
+
+  // Clone the registered properties only
+  for (var i = 0; i < this._registeredProperties.length; i++) {
+    var p = this._registeredProperties[i];
+    if (this[p] instanceof xw.Widget) {
+      o[p] = this[p];
+    } else {
+      o[p] = xw.Sys.cloneObject(this[p]);
+    }    
+  }
+  
+  // Set the parent and clone the children
+  o.parent = xw.Sys.isUndefined(parent) ? this.parent : parent;
+  for (var i = 0; i < this.children.length; i++) {
+    o.children.push(this.children[i].clone(o));
+  }
+  
+  return o;
+};
+
 xw.Widget.prototype.toString = function() {
   return "xw.Widget[" + this.id + "]";
 };
@@ -1219,9 +1266,10 @@ xw.NonVisual.prototype = new xw.Widget();
 // Represents an XHTML element
 xw.XHtml = function() {
   xw.Visual.call(this);
-  this.tagName = null; 
+  this._className = "xw.XHtml";
+  this.registerProperty("tagName", null);
+  this.registerProperty("attributes", null);
   this.control = null;
-  this.attributes = {};  
 };
 
 xw.XHtml.prototype = new xw.Visual();
@@ -1251,8 +1299,10 @@ xw.XHtml.prototype.toString = function() {
 // Represents plain ol' text
 xw.Text = function() {
   xw.Visual.call(this);
+  this._className = "xw.Text";
   delete children;
   this.registerProperty("text", "");
+  this.registerProperty("escape", true);
   this.control = null;  
 };
 
@@ -1260,23 +1310,32 @@ xw.Text.prototype = new xw.Visual();
 
 xw.Text.prototype.render = function(container) {
   this.control = document.createElement("span");
-  this.textNode = document.createTextNode();
-  this.control.appendChild(this.textNode);  
   container.appendChild(this.control);
   this.renderText();
 };
 
 xw.Text.prototype.renderText = function() {
-  var expressions = this.text.match(xw.EL.regex());
-
-  if (expressions === null) {
-    this.textNode.nodeValue = this.text;      
-  } else {
-    for (var i = 0; i < expressions.length; i++) {
-      // If any of the expressions are undefined, then break out early
-      if (xw.Sys.isUndefined(xw.EL.eval(this, expressions[i]))) return;
+  if (!xw.Sys.isUndefined(this.text)) {
+    var expressions = this.text.match(xw.EL.regex());
+    var renderedText;
+    
+    if (expressions === null) {
+      renderedText = this.text;      
+    } else {
+      for (var i = 0; i < expressions.length; i++) {
+        // If any of the expressions are undefined, then break out early
+        if (xw.Sys.isUndefined(xw.EL.eval(this, expressions[i]))) return;
+      }
+      renderedText = xw.EL.interpolate(this, this.text);
     }
-    this.textNode.nodeValue = xw.EL.interpolate(this, this.text);
+    
+    if (this.escape) {
+      this.control.innerHTML = renderedText;
+    } else {
+      this.textNode = document.createTextNode();
+      this.control.appendChild(this.textNode);
+      this.textNode.nodeValue = renderedText;
+    }
   }
 };
 
@@ -1301,6 +1360,8 @@ xw.Text.prototype.toString = function() {
 
 xw.Container = function() {
   xw.Visual.call(this);
+  this._className = "xw.Container";
+  
   // FIXME hard coded the layout for now
   this.layout = new xw.BorderLayout();
 }
@@ -1324,9 +1385,10 @@ xw.Container.prototype.setLayout = function(layoutName) {
 //
 // A single instance of a view
 //
-xw.View = function(viewName) {  
-  this.viewName = viewName;
+xw.View = function(viewName) {   
   xw.Container(this);
+  this._className = "xw.View";
+  this.viewName = viewName; 
   this.registerEvent("afterRender");
   // The container control
   this.container = null;  
