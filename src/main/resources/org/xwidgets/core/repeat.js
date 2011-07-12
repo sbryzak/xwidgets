@@ -41,6 +41,10 @@ org.xwidgets.core.Repeat.prototype.renderChildren = function() {
         clone.render(this.container);
       }
     }
+    
+    if (this.afterRender) {
+      this.afterRender.invoke();
+    };     
   }
 };
 

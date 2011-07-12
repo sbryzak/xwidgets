@@ -5,7 +5,7 @@ org.xwidgets.core.RichEdit = function() {
   this.registerProperty("value", null);
   this.registerProperty("enableResize", false);
   this.registerProperty("resizeMaxWidth", -1);
-  this.registerEvent("onchange");
+  this.registerEvent("onChange");
   this.control = null;
   this.editor = null;  
 
@@ -43,7 +43,7 @@ org.xwidgets.core.RichEdit.prototype.renderEditor = function() {
     if (this.resizeMaxWidth != -1) {
       config.resize_maxWidth = parseInt(this.resizeMaxWidth);
     }
-    config.extraPlugins = "geshi";
+    config.extraPlugins = "syntaxhighlight";
     config.toolbar = "XWidgets";
     config.toolbar_XWidgets = [
 	    //{ name: 'document', items : [ 'Source','-','Save','NewPage','DocProps','Preview','Print','-','Templates' ] },
@@ -78,11 +78,11 @@ org.xwidgets.core.RichEdit.prototype.renderEditor = function() {
 };
 
 org.xwidgets.core.RichEdit.prototype.checkChanged = function(event) {
-  // Fire an onchange event if the length of the content has changed
+  // Fire an onChange event if the length of the content has changed
   if (this.editor.getData().length != this.length) {
     this.length = this.editor.getData().length;
-    if (this.onchange) {
-      this.onchange.invoke();
+    if (this.onChange) {
+      this.onChange.invoke();
     };  
   }
 };
