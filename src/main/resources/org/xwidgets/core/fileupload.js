@@ -1,9 +1,12 @@
+//
+// File upload widget, based on Andrew Valums file uploader http://github.com/valums/file-uploader
+//
 package("org.xwidgets.core");
 
 org.xwidgets.core.FileUpload = function() {
   xw.Visual.call(this);
   this.registerProperty("caption", "Upload a file");
-  this.registerProperty("uploadUrl", null);
+  this.registerProperty("uploadPath", null);
   this.control = null;
   this.uploader = null;
 };
@@ -29,7 +32,7 @@ org.xwidgets.core.FileUpload.prototype.render = function(container) {
 org.xwidgets.core.FileUpload.prototype.renderFileUploader = function() {
     this.uploader = new qq.FileUploader({
       element: this.control,
-      action: this.uploadUrl,
+      action: this.uploadPath,
       template: this.buildTemplate()
     });    
 };
