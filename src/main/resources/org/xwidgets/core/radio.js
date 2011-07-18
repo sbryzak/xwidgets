@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Radio = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.Radio"; 
   this.registerProperty("styleClass", "");
   this.registerProperty("orientation", "horizontal");
   this.registerProperty("labelPosition", "left");

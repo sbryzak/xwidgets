@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Select = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.Select"; 
   this.registerProperty("styleClass", "");
   this.control = null;
   this.objectValues = [];

@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Label = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.Label"; 
   this.registerProperty("value", "");
   this.registerProperty("styleClass", "");
   this.control = null;
@@ -24,3 +25,6 @@ org.xwidgets.core.Label.prototype.setValue = function(value) {
   if (this.control) this.control.data = value;
 };
 
+org.xwidgets.core.Label.prototype.toString = function() {
+  return "org.xwidgets.core.Label[" + this.id + "]";
+};

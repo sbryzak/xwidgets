@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Panel = function() {
   xw.Container.call(this);
+  this._className = "org.xwidgets.core.Panel"; 
   this.width = 200;
   this.height = 100; 
   

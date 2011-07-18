@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Link = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.Link"; 
   this.registerProperty("caption", "");
   this.registerProperty("styleClass", "");
   this.registerEvent("onclick", null);

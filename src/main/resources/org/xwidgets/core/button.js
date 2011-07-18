@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Button = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.Button";  
   this.control = null;
   this.registerProperty("label", null);
   this.registerProperty("styleClass", null);

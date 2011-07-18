@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.RichEdit = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.RichEdit"; 
   this.registerProperty("value", null);
   this.registerProperty("enableResize", false);
   this.registerProperty("resizeMaxWidth", -1);

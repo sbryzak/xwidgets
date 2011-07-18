@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.InputText = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.InputText"; 
   this.registerProperty("value", null);
   this.registerProperty("styleClass", "");
   this.control = null;

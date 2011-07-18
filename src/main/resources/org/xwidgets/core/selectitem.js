@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.SelectItem = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.SelectItem"; 
   this.registerProperty("itemValue", null);
   this.registerProperty("itemLabel", null);
   this.rendered = false;

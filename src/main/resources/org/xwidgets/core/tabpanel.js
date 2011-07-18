@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Tab = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.Tab"; 
   this.container = null;
   this.registerProperty("name", null);
   this.registerProperty("enabled", true);
@@ -18,6 +19,7 @@ org.xwidgets.core.Tab.prototype.render = function(container) {
 
 org.xwidgets.core.TabPanel = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.TabPanel"; 
   this.registerProperty("styleClass", "");
   this.registerEvent("beforeScroll");
   this.control = null;

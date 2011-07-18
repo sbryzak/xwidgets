@@ -5,6 +5,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.FileUpload = function() {
   xw.Visual.call(this);
+  this._className = "org.xwidgets.core.FileUpload"; 
   this.registerProperty("caption", "Upload a file");
   this.registerProperty("uploadPath", null);
   this.control = null;
