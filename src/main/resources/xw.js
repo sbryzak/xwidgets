@@ -66,9 +66,9 @@ xw.Sys.createHttpRequest = function(mimeType) {
 //
 // Asynchronously loads the javascript source from the specified url
 //   callback - the callback function to invoke if successful
-//   failCallback - the callback function to invoke if loading the resource failed
+//   failCallback = the callback function to invoke if loading failed
 //
-xw.Sys.loadSource = function(url, callback) {
+xw.Sys.loadSource = function(url, callback, failCallback) {
   var req = xw.Sys.createHttpRequest("text/plain");
   req.onreadystatechange = function() {
     if (req.readyState === 4) {
@@ -94,6 +94,9 @@ xw.Sys.loadSource = function(url, callback) {
         }               
       } else if (req.status === 404) {
         alert("404 error: the requested resource '" + url + "' could not be found.");
+        if (failCallback) {
+          failCallback();
+        }
       }
     }
   };
@@ -887,7 +890,7 @@ xw.ViewManager.loadViewCallback = function(req, viewName, container)
       }
     }
     else {
-      alert("There was an error processing your request.  Error code: " + req.status);
+      alert("There was an error when trying to load view [" + viewName + "] - Error code: " + req.status);
     }
   };
 };
@@ -902,21 +905,22 @@ xw.WidgetManager = {};
 //
 xw.WidgetManager.pendingViews = [];
 
-//
-// Stores a list of widgets to load
-//
-xw.WidgetManager.pendingWidgets = [];
+xw.WidgetManager.WS_QUEUED = "QUEUED";
+xw.WidgetManager.WS_LOADING = "LOADING";
+xw.WidgetManager.WS_LOADED = "LOADED";
+xw.WidgetManager.WS_FAILED = "FAILED";
 
 //
-// Stores a list of the widgets that we've already loaded (so we don't load them more than once)
+// Stores the current widget load state
 //
-xw.WidgetManager.loadedWidgets = [];
+xw.WidgetManager.widgetState = {};
 
-xw.WidgetManager.isWidgetLoaded = function(fqwn) {
-  for (var i = 0; i < xw.WidgetManager.loadedWidgets.length; i++) {
-    if (xw.WidgetManager.loadedWidgets[i] == fqwn) return true;
-  }
-  return false;
+xw.WidgetManager.getWidgetState = function(fqwn) {
+  return xw.WidgetManager.widgetState[fqwn];
+};
+
+xw.WidgetManager.setWidgetState = function(fqwn, state) {
+  xw.WidgetManager.widgetState[fqwn] = state;
 };
 
 //
@@ -925,59 +929,94 @@ xw.WidgetManager.isWidgetLoaded = function(fqwn) {
 //
 xw.WidgetManager.loadWidgetsAndOpenView = function(widgets, viewName, container) {
   var i;
+  var wm = xw.WidgetManager;
+  
+  // This array is used to store a list of all the widgets that the specified view requires,
+  // that are not yet loaded or are in the process of loading
   var pending = [];
+  
   for (i = 0; i < widgets.length; i++) {
-    if (!xw.WidgetManager.isWidgetLoaded(widgets[i])) {
-      xw.WidgetManager.pendingWidgets.push(widgets[i]);
+    var state = wm.getWidgetState(widgets[i]);   
+    if (xw.Sys.isUndefined(state)) {
+      wm.setWidgetState(widgets[i], wm.WS_QUEUED);
       pending.push(widgets[i]);
-    } else {
+    } else if (state === wm.WS_LOADING) {
+      pending.push(widgets[i]);
+    } else if (state === wm.WS_FAILED) {
       alert("Could not open view [" + viewName + "] as there was an error loading widget [" + widgets[i] + "]");
       return;
-    }
+    } 
   }
-  xw.WidgetManager.pendingViews.push({viewName: viewName, container: container, pendingWidgets: pending});
-  xw.WidgetManager.loadPendingWidgets();
+  
+  // If there are any pending widgets that have not yet been loaded, queue the view and
+  // load any queued widgets
+  if (pending.length > 0) {
+    wm.pendingViews.push({viewName: viewName, container: container, pendingWidgets: pending});  
+    wm.loadQueuedWidgets();
+  } else {
+    xw.ViewManager.openView(v.viewName, v.container);
+  }
 };
 
-// 
-// A recursive method that loads any unloaded widgets, then renders any pending views
-//
-xw.WidgetManager.loadPendingWidgets = function() {
-  if (xw.WidgetManager.pendingWidgets.length > 0) {
-    var fqwn = xw.WidgetManager.pendingWidgets.shift();
+xw.WidgetManager.loadQueuedWidgets = function() {
+  var wm = xw.WidgetManager;
+  
+  for (var fqwn in wm.widgetState) {
+    var state = wm.getWidgetState(fqwn);
     
-    // We do a final check here to see if the class exists before attempting to load it
-    if (!xw.Sys.classExists(fqwn)) {
-      var url = xw.Sys.getBasePath() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
-      xw.WidgetManager.loadedWidgets.push(fqwn);
-      xw.Sys.loadSource(url, xw.WidgetManager.loadPendingWidgets);
-    } else {
-      xw.WidgetManager.loadPendingWidgets();
-    }
-  } else {
-    // Render any pending views
-    for (var i = xw.WidgetManager.pendingViews.length - 1; i >= 0; i--) {
-      var v = xw.WidgetManager.pendingViews[i];
-      
-      var pending = false;
-      // Only render the view if all of its widgets have now been loaded
-      for (var j = 0; j < v.pendingWidgets.length; j++) {
-        if (!xw.Sys.classExists(v.pendingWidgets[j])) {
-          pending = true;
-          break;        
-        }
+    if (state === wm.WS_QUEUED) {
+      // Last check to see if the class exists before we try loading it
+      if (!xw.Sys.classExists(fqwn)) {
+        // Set the widget state to LOADING
+        wm.setWidgetState(fqwn, wm.WS_LOADING);
+        
+        // Define callback methods for success and failure
+        var successCallback = function() {
+          wm.setWidgetState(fqwn, wm.WS_LOADED);
+          wm.loadQueuedWidgets();
+        };
+        var failureCallback = function() {
+          wm.setWidgetState(fqwn, wm.WS_FAILED);
+          wm.loadQueuedWidgets();
+        };
+        
+        var url = xw.Sys.getBasePath() + fqwn.replace(/\./g, "/").toLowerCase() + ".js";    
+        xw.Sys.loadSource(url, successCallback, failureCallback);
+        return;      
+      } else {
+        wm.setWidgetState(fqwn, wm.WS_LOADED);
       }
-      
-      if (!pending) {
-        xw.WidgetManager.pendingViews.splice(i, 1);
-        xw.ViewManager.openView(v.viewName, v.container);
+    }  
+  }
+  
+  wm.openPendingViews();
+};
+
+xw.WidgetManager.openPendingViews = function() {
+  var wm = xw.WidgetManager;
+  var pv = wm.pendingViews;
+  
+  for (var i = pv.length - 1; i >= 0; i--) {    
+    var pending = false;
+    
+    // Only render the view if all of its widgets have now been loaded
+    for (var j = 0; j < pv[i].pendingWidgets.length; j++) {
+      var state = wm.getWidgetState(pv[i].pendingWidgets[j]);
+      if (state === wm.WS_FAILED) {
+        alert("Could not open view [" + viewName + "] as there was an error loading widget [" + pv[i].pendingWidgets[j] + "]");
+        pv.splice(i, 1);
+        break;
+      } else if (state !== wm.WS_LOADED) {
+        pending = true;
+        break;      
       }
     }
     
-   /* while (xw.WidgetManager.pendingViews.length > 0) {
-      var v = xw.WidgetManager.pendingViews.shift();      
-      xw.ViewManager.openView(v.viewName, v.container);
-    }*/
+    if (!pending) {
+      var view = pv[i];
+      wm.pendingViews.splice(i, 1);
+      xw.ViewManager.openView(view.viewName, view.container);
+    }
   }
 };
   
@@ -1478,4 +1517,47 @@ xw.openView = function(viewName, container) {
   xw.ViewManager.openView(viewName, container);
 };
 
+// Define an object to hold popup window variables
+xw.Popup = {};
+
+//
+// Opens a view in a modal popup window
+//
+xw.openPopup = function(viewName, title, width, height) {
+  //filter:alpha(opacity=25);-moz-opacity:.25;opacity:.25;
+  xw.Popup.overdiv = document.createElement("div");
+  xw.Popup.overdiv.className = "overdiv";
+
+  xw.Popup.content = document.createElement("div");
+  
+  var msg = document.createElement("div");
+  msg.className = "msg";
+  msg.innerHTML = msgtxt;
+  
+  xw.Popup.content.appendChild(msg);
+  
+  var closebtn = document.createElement("button");
+  closebtn.onclick = function() {
+      xw.closePopup();
+  }
+  closebtn.innerHTML = "Close";
+  xw.Popup.content.appendChild(closebtn);
+
+  document.body.appendChild(xw.Popup.overdiv);
+  document.body.appendChild(xw.Popup.content);
+};
+
+//
+// Closes the popup window
+//
+xw.closePopup = function() {
+  if (xw.Popup.content != null) {
+    document.body.removeChild(xw.Popup.content);
+    xw.Popup.content = null;
+  }
+  if (xw.Popup.overdiv != null) {
+    document.body.removeChild(xw.Popup.overdiv);
+    xw.Popup.overdiv = null;
+  }
+};
 
