@@ -1326,6 +1326,8 @@ xw.XHtml.prototype.render = function(container) {
 xw.XHtml.prototype.setAttribute = function(attribName, value) {
   if (attribName == "class") {
     this.control.className = value;
+  } else if (attribName == "style") {
+    this.control.style.cssText = value;
   } else {
     this.control[attribName] = value;
   }
@@ -1519,8 +1521,8 @@ xw.openView = function(viewName, container) {
 
 // Define an object to hold popup window variables
 xw.Popup = {};
-xw.Popup.styleClass = "xwPopupWindow";
-xw.Popup.titleStyleClass = "xwPopupWindowTitle";
+xw.Popup.windowClass = "xwPopupWindow";
+xw.Popup.titleClass = "xwPopupTitle";
 
 //
 // Opens a view in a modal popup window
@@ -1557,15 +1559,15 @@ xw.openPopup = function(viewName, title, width, height) {
   c.style.marginTop = "auto";
   c.style.marginBottom = "auto";
   
-  if (xw.Popup.styleClass !== null) {
-    c.className = xw.Popup.styleClass;
+  if (xw.Popup.windowClass !== null) {
+    c.className = xw.Popup.windowClass;
   }
   
   xw.Popup.container = c;  
     
   var titleDiv = document.createElement("div");
   titleDiv.appendChild(document.createTextNode(title));
-  titleDiv.className = xw.Popup.titleStyleClass;
+  titleDiv.className = xw.Popup.titleClass;
   c.appendChild(titleDiv);
   
   var contentDiv = document.createElement("div");
