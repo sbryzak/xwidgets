@@ -1519,45 +1519,82 @@ xw.openView = function(viewName, container) {
 
 // Define an object to hold popup window variables
 xw.Popup = {};
+xw.Popup.styleClass = "xwPopupWindow";
+xw.Popup.titleStyleClass = "xwPopupWindowTitle";
 
 //
 // Opens a view in a modal popup window
 //
 xw.openPopup = function(viewName, title, width, height) {
-  //filter:alpha(opacity=25);-moz-opacity:.25;opacity:.25;
-  xw.Popup.overdiv = document.createElement("div");
-  xw.Popup.overdiv.className = "overdiv";
+  var bg = document.createElement("div");
+  bg.style.zIndex = "101";
+  bg.style.backgroundColor = "#000000";
+  bg.style.filter = "alpha(opacity=25);"
+  bg.style.MozOpacity = ".25";
+  bg.style.opacity = ".25";
+  bg.style.width = "100%";
+  bg.style.height = "100%";
+  bg.style.position = "absolute";
+  bg.style.top = "0px";
+  bg.style.left = "0px";
+  
+  xw.Popup.background = bg;
 
-  xw.Popup.content = document.createElement("div");
+  var c = document.createElement("div");
+  c.style.position = "absolute";
+  c.style.backgroundColor = "#ffffff";
+  c.style.zIndex = 123;
+  c.style.width = (xw.Sys.isUndefined(width) ? "400px" : width + "px");
+  c.style.height = (xw.Sys.isUndefined(height) ? "400px" : height + "px");
+  c.style.overflowX = "auto";
+  c.style.overflowY = "auto";
+  c.style.left = "0px";
+  c.style.right = "0px";
+  c.style.top = "0px";  
+  c.style.bottom = "0px";
+  c.style.marginLeft = "auto";
+  c.style.marginRight = "auto";
+  c.style.marginTop = "auto";
+  c.style.marginBottom = "auto";
   
-  var msg = document.createElement("div");
-  msg.className = "msg";
-  msg.innerHTML = msgtxt;
+  if (xw.Popup.styleClass !== null) {
+    c.className = xw.Popup.styleClass;
+  }
   
-  xw.Popup.content.appendChild(msg);
+  xw.Popup.container = c;  
+    
+  var titleDiv = document.createElement("div");
+  titleDiv.appendChild(document.createTextNode(title));
+  titleDiv.className = xw.Popup.titleStyleClass;
+  c.appendChild(titleDiv);
+  
+  var contentDiv = document.createElement("div");
+  c.appendChild(contentDiv);
+  
+  xw.openView(viewName, contentDiv);  
   
   var closebtn = document.createElement("button");
   closebtn.onclick = function() {
       xw.closePopup();
   }
   closebtn.innerHTML = "Close";
-  xw.Popup.content.appendChild(closebtn);
+  xw.Popup.container.appendChild(closebtn);  
 
-  document.body.appendChild(xw.Popup.overdiv);
-  document.body.appendChild(xw.Popup.content);
+  document.body.appendChild(xw.Popup.background);
+  document.body.appendChild(xw.Popup.container);
 };
 
 //
 // Closes the popup window
 //
 xw.closePopup = function() {
-  if (xw.Popup.content != null) {
-    document.body.removeChild(xw.Popup.content);
-    xw.Popup.content = null;
+  if (xw.Popup.container != null) {
+    document.body.removeChild(xw.Popup.container);
+    xw.Popup.container = null;
   }
-  if (xw.Popup.overdiv != null) {
-    document.body.removeChild(xw.Popup.overdiv);
-    xw.Popup.overdiv = null;
+  if (xw.Popup.background != null) {
+    document.body.removeChild(xw.Popup.background);
+    xw.Popup.background = null;
   }
 };
 
