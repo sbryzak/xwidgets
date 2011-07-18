@@ -2,6 +2,7 @@ package("org.xwidgets.core");
 
 org.xwidgets.core.Surrogate = function() {
   xw.NonVisual.call(this);
+  this._className = "org.xwidgets.core.Surrogate";  
 };
 
 org.xwidgets.core.Surrogate.prototype = new xw.NonVisual();
