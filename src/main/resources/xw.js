@@ -1523,6 +1523,7 @@ xw.openView = function(viewName, container) {
 xw.Popup = {};
 xw.Popup.windowClass = "xwPopupWindow";
 xw.Popup.titleClass = "xwPopupTitle";
+xw.Popup.closeButtonClass = "xwPopupCloseButton";
 
 //
 // Opens a view in a modal popup window
@@ -1542,57 +1543,69 @@ xw.openPopup = function(viewName, title, width, height) {
   
   xw.Popup.background = bg;
 
-  var c = document.createElement("div");
-  c.style.position = "absolute";
-  c.style.backgroundColor = "#ffffff";
-  c.style.zIndex = 123;
-  c.style.width = (xw.Sys.isUndefined(width) ? "400px" : width + "px");
-  c.style.height = (xw.Sys.isUndefined(height) ? "400px" : height + "px");
-  c.style.overflowX = "auto";
-  c.style.overflowY = "auto";
-  c.style.left = "0px";
-  c.style.right = "0px";
-  c.style.top = "0px";  
-  c.style.bottom = "0px";
-  c.style.marginLeft = "auto";
-  c.style.marginRight = "auto";
-  c.style.marginTop = "auto";
-  c.style.marginBottom = "auto";
+  var outer = document.createElement("div");
+  outer.style.position = "absolute";
+  outer.style.zIndex = 123;
+  outer.style.width = (xw.Sys.isUndefined(width) ? "400px" : width + "px");
+  outer.style.height = (xw.Sys.isUndefined(height) ? "400px" : height + "px");
+  outer.style.left = "0px";
+  outer.style.right = "0px";
+  outer.style.top = "0px";  
+  outer.style.bottom = "0px";
+  outer.style.overflow = "hidden";
+  outer.style.marginLeft = "auto";
+  outer.style.marginRight = "auto";
+  outer.style.marginTop = "auto";
+  outer.style.marginBottom = "auto";
+  outer.style.paddingLeft = "18px";
+  outer.style.paddingRight = "30px";
+  outer.style.paddingTop = "18px";
+  outer.style.paddingBottom = "30px"; 
+  xw.Popup.outer = outer;
+  
+  var inner = document.createElement("div");
+  inner.style.position = "relative";
+  inner.style.backgroundColor = "#ffffff";  
+  inner.style.width = "100%";
+  inner.style.height = "100%"; 
+  inner.style.zIndex = 130; 
   
   if (xw.Popup.windowClass !== null) {
-    c.className = xw.Popup.windowClass;
-  }
+    inner.className = xw.Popup.windowClass;
+  }  
   
-  xw.Popup.container = c;  
+  outer.appendChild(inner);
+  
+  var closebtn = document.createElement("div");
+  closebtn.className = xw.Popup.closeButtonClass;
+  closebtn.onclick = xw.closePopup;
+  closebtn.style.zIndex = 150;
+  inner.appendChild(closebtn);  
     
   var titleDiv = document.createElement("div");
   titleDiv.appendChild(document.createTextNode(title));
   titleDiv.className = xw.Popup.titleClass;
-  c.appendChild(titleDiv);
+  inner.appendChild(titleDiv);
   
   var contentDiv = document.createElement("div");
-  c.appendChild(contentDiv);
+  contentDiv.style.overflowX = "auto";
+  contentDiv.style.overflowY = "auto";
   
-  xw.openView(viewName, contentDiv);  
+  inner.appendChild(contentDiv);
   
-  var closebtn = document.createElement("button");
-  closebtn.onclick = function() {
-      xw.closePopup();
-  }
-  closebtn.innerHTML = "Close";
-  xw.Popup.container.appendChild(closebtn);  
+  xw.openView(viewName, contentDiv);
 
-  document.body.appendChild(xw.Popup.background);
-  document.body.appendChild(xw.Popup.container);
+  document.body.appendChild(bg);
+  document.body.appendChild(outer);
 };
 
 //
 // Closes the popup window
 //
 xw.closePopup = function() {
-  if (xw.Popup.container != null) {
-    document.body.removeChild(xw.Popup.container);
-    xw.Popup.container = null;
+  if (xw.Popup.outer != null) {
+    document.body.removeChild(xw.Popup.outer);
+    xw.Popup.outer = null;
   }
   if (xw.Popup.background != null) {
     document.body.removeChild(xw.Popup.background);
