@@ -1535,11 +1535,11 @@ xw.openPopup = function(viewName, title, width, height) {
   bg.style.filter = "alpha(opacity=25);"
   bg.style.MozOpacity = ".25";
   bg.style.opacity = ".25";
-  bg.style.width = "100%";
-  bg.style.height = "100%";
-  bg.style.position = "absolute";
+  bg.style.position = "fixed";
   bg.style.top = "0px";
   bg.style.left = "0px";
+  bg.style.right = "0px";
+  bg.style.bottom = "0px";
   
   xw.Popup.background = bg;
 
@@ -1568,6 +1568,9 @@ xw.openPopup = function(viewName, title, width, height) {
   inner.style.backgroundColor = "#ffffff";  
   inner.style.width = "100%";
   inner.style.height = "100%"; 
+  inner.style.boxShadow = "4px 4px 10px 2px #999";
+  inner.style.MozBoxShadow = "4px 4px 10px 2px #999";
+  inner.style.WebkitBoxShadow = "4px 4px 10px 2px #999";
   inner.style.zIndex = 130; 
   
   if (xw.Popup.windowClass !== null) {
