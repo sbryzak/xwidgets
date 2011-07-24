@@ -275,7 +275,7 @@ xw.Sys.parseXml = function(body) {
 xw.Sys.setObjectProperty = function(obj, property, value) {
   // Check if the object has a setter method
   var setterName = "set" + xw.Sys.capitalize(property);
-  if (!xw.Sys.isUndefined(obj, setterName) && typeof obj[setterName] === "function") {
+  if (xw.Sys.isDefined(obj, setterName) && typeof obj[setterName] === "function") {
     obj[setterName](value);
   } else {
     obj[property] = value;
@@ -425,7 +425,7 @@ xw.EL.eval = function(widget, expr) {
   // First we walk up the component tree to see if the variable can be resolved within the widget's hierarchy
   var w = widget;
   while (w != null && !(w instanceof xw.View)) {
-    if (!xw.Sys.isUndefined(w.resolve) && (typeof w.resolve == "function")) {
+    if (xw.Sys.isDefined(w.resolve) && (typeof w.resolve == "function")) {
       var v = w.resolve(parts[0]);
       if (v != undefined) {
         root = v;
@@ -435,10 +435,12 @@ xw.EL.eval = function(widget, expr) {
     w = w.parent;    
   } 
   
-  if (root == null) {
+  if (root === null) {
+    var w = widget.getOwner()._registeredWidgets[parts[0]];
+
     // Next we check if there are any named widgets within the same view that match        
-    if (!xw.Sys.isUndefined(widget.view._registeredWidgets[parts[0]])) {  
-      root = widget.view._registeredWidgets[parts[0]];
+    if (xw.Sys.isDefined(w)) {  
+      root = w;
     // Last, we check all of the registered EL resolvers
     } else {
       for (var i = 0; i < xw.EL.resolvers.length; i++) {    
@@ -450,7 +452,19 @@ xw.EL.eval = function(widget, expr) {
     }
   }
   
-  if (root == null) {
+  // Lastly we check any data modules
+  if (root === null) {
+    for (var i = 0; i < xw.Controller.activeDataModules.length; i++) {
+      var dm = xw.Controller.activeDataModules[i];
+      var w = dm._registeredWidgets[parts[0]];
+      if (xw.Sys.isDefined(w)) {
+        root = w;
+        break;
+      }
+    }
+  }
+  
+  if (root === null) {
     return undefined;
   }
   
@@ -918,11 +932,18 @@ xw.Controller.openView = function(viewName, definition, params, c) {
   view.render(container);
 };
 
+xw.Controller.openDataModule = function(dataModule, definition, params) {
+  var dm = new xw.DataModule(dataModule);
+  xw.Controller.parseChildren(dm, definition.children, dm);
+  xw.Controller.activeDataModules.push(dm);
+  dm.open();
+};
+
 //
 // This recursive function does the work of converting the view definition into
 // actual widget instances
 //
-xw.Controller.parseChildren = function(view, childNodes, parentWidget) {
+xw.Controller.parseChildren = function(owner, childNodes, parentWidget) {
   var i, widget;
   var widgets = [];
   for (i = 0; i < childNodes.length; i++) {
@@ -932,7 +953,7 @@ xw.Controller.parseChildren = function(view, childNodes, parentWidget) {
       // Create an instance of the widget and set its parent and view
       widget = xw.Sys.newInstance(c.fqwn);
       widget.setParent(parentWidget);
-      widget.view = view;
+      widget.setOwner(owner);      
       
       // Set the widget's attributes
       for (var p in c.attributes) { 
@@ -943,27 +964,27 @@ xw.Controller.parseChildren = function(view, childNodes, parentWidget) {
       
       // If this node has children, parse them also
       if (xw.Sys.isDefined(c.children) && c.children.length > 0) {
-        xw.Controller.parseChildren(view, c.children, widget);
+        xw.Controller.parseChildren(owner, c.children, widget);
       }
     } else if (c instanceof xw.EventNode) {      
       var action = new xw.Action();
       action.script = c.script;
-      action.view = view;
+      action.setOwner(owner);      
       parentWidget[c.type] = action;
     } else if (c instanceof xw.XHtmlNode) {
       widget = new xw.XHtml();      
       widget.setParent(parentWidget);
-      widget.view = view;
+      widget.setOwner(owner);
       widget.tagName = c.tagName;
       widget.attributes = c.attributes;
       widgets.push(widget);
-      if (!xw.Sys.isUndefined(c.children) && c.children.length > 0) {
-        xw.Controller.parseChildren(view, c.children, widget); 
+      if (xw.Sys.isDefined(c.children) && c.children.length > 0) {
+        xw.Controller.parseChildren(owner, c.children, widget); 
       }
     } else if (c instanceof xw.TextNode) {
       widget = new xw.Text();
       widget.setParent(parentWidget);
-      widget.view = view;
+      widget.setOwner(owner);      
       widget.text = c.text;
       widget.escape = c.escape;
       widgets.push(widget);
@@ -1190,25 +1211,55 @@ xw.Action = function() {
 };
 
 xw.Action.prototype.invoke = function() {
-  if (!xw.Sys.isUndefined(this.script)) {
+  if (xw.Sys.isDefined(this.script)) {
     // The script must have access to named widgets (widgets with an id)
     // to do this, we inject some additional lines into the front of the 
     // script.
   
     var __script = "{";
+
+    // local variable, visible to our evaluated script -
+    // required to set up script variables     
+    var __registered = {};
     
-    for (var id in this.view._registeredWidgets) {
+    // register variables for all widgets within the same view/data module with an id
+    for (var id in this.getOwner()._registeredWidgets) {
+      __registered[id] = this.getOwner()._registeredWidgets[id];
       __script += "var " + id + " = __registered[\"" + id + "\"];";
+    }
+
+    // register variables for all widgets with an id from any data modules, if there
+    // is no local overriding variable
+    for (var i = 0; i < xw.Controller.activeDataModules.length; i++) {
+      var dm = xw.Controller.activeDataModules[i];
+      for (var id in dm._registeredWidgets) {
+        if (xw.Sys.isUndefined(__registered[id])) {
+          __registered[id] = dm._registeredWidgets[id];
+          __script += "var " + id + " = __registered[\"" + id + "\"];";
+        }
+      }    
     }
        
     __script += this.script;
     __script += "}";    
-
-    // local variable, visible to our evaluated script -
-    // required to set up script variables     
-    var __registered = this.view._registeredWidgets;
     
     return eval(__script);
+  }
+};
+
+xw.Action.prototype.setOwner = function(owner) {
+  if (owner instanceof xw.View) {
+    this.view = owner;
+  } else if (owner instanceof xw.DataModule) {
+    this.dataModule = owner;
+  }
+};
+
+xw.Action.prototype.getOwner = function() {
+  if (xw.Sys.isDefined(this.view)) {
+    return this.view;
+  } else if (xw.Sys.isDefined(this.dataModule)) {
+    return this.dataModule;
   }
 };
 
@@ -1239,12 +1290,28 @@ xw.Widget.prototype.getId = function() {
 
 xw.Widget.prototype.setId = function(id) {
   // register the id of this widget with the owning view.
-  if (!xw.Sys.isUndefined(this.id)) {
-    this.view.unregisterWidget(this);
+  if (xw.Sys.isDefined(this.id)) {
+    this.getOwner().unregisterWidget(this);
     this.id = null;
   } else {
     this.id = id;
-    this.view.registerWidget(this);  
+    this.getOwner().registerWidget(this);  
+  }
+};
+
+xw.Widget.prototype.getOwner = function() {
+  if (xw.Sys.isDefined(this.view)) {
+    return this.view;
+  } else if (xw.Sys.isDefined(this.dataModule)) {
+    return this.dataModule;
+  }
+};
+
+xw.Widget.prototype.setOwner = function(owner) {
+  if (owner instanceof xw.View) {
+    this.view = owner;
+  } else if (owner instanceof xw.DataModule) {
+    this.dataModule = owner;
   }
 };
 
@@ -1256,13 +1323,13 @@ xw.Widget.prototype.registerProperty = function(propertyName, defaultValue) {
   if (!xw.Sys.arrayContains(this._registeredProperties, propertyName)) {
     this._registeredProperties.push(propertyName);
   }
-  if (!xw.Sys.isUndefined(defaultValue)) {
+  if (xw.Sys.isDefined(defaultValue)) {
     this[propertyName] = defaultValue;
   }
 };
 
 xw.Widget.prototype.addEvent = function(control, eventName, event) {     
-  if (!xw.Sys.isUndefined(this["on" + eventName]) && !xw.Sys.isUndefined(event)) {        
+  if (xw.Sys.isDefined(this["on" + eventName]) && xw.Sys.isDefined(event)) {        
     var sender = this;
     var action = function() {
       event.invoke(sender);
@@ -1274,23 +1341,6 @@ xw.Widget.prototype.addEvent = function(control, eventName, event) {
 xw.Widget.prototype.registerEvent = function(eventName) {
   if (!xw.Sys.arrayContains(this._registeredEvents, eventName)) {
     this._registeredEvents.push(eventName);
-  }
-};
-
-xw.Widget.prototype.renderChildren = function(container) {
-  var i;
-  for (i = 0; i < this.children.length; i++) {
-    if (this.children[i] instanceof xw.Visual) {  
-      if (xw.Sys.isUndefined(this.children[i].render)) {
-        throw "Error - widget [" + this.children[i] + "] extending xw.Visual does not provide a render() method";
-      } else {
-        this.children[i].render(container);       
-      }
-    } else if (this.children[i] instanceof xw.NonVisual) {      
-      this.children[i].open();
-    } else {
-      throw "Error - unrecognized widget type [" + this.children[i] + "] encountered in view definition";
-    }
   }
 };
 
@@ -1335,11 +1385,41 @@ xw.Visual = function() {
 
 xw.Visual.prototype = new xw.Widget();
 
+xw.Visual.prototype.renderChildren = function(container) {
+  var i;
+  for (i = 0; i < this.children.length; i++) {
+    if (this.children[i] instanceof xw.Visual) {  
+      if (xw.Sys.isUndefined(this.children[i].render)) {
+        throw "Error - widget [" + this.children[i] + "] extending xw.Visual does not provide a render() method";
+      } else {
+        this.children[i].render(container);       
+      }
+    } else if (this.children[i] instanceof xw.NonVisual) {      
+      this.children[i].open();
+    } else {
+      throw "Error - unrecognized widget type [" + this.children[i] + "] encountered in view definition";
+    }
+  }
+};
+
 xw.NonVisual = function() {
   xw.Widget.call(this);
 };
 
 xw.NonVisual.prototype = new xw.Widget();
+
+xw.NonVisual.prototype.openChildren = function(container) {
+  var i;
+  for (i = 0; i < this.children.length; i++) {
+    if (this.children[i] instanceof xw.Visual) {  
+      throw "Error - widget extending xw.Visual may not be a child of a widget extending xw.NonVisual";
+    } else if (this.children[i] instanceof xw.NonVisual) {      
+      this.children[i].open();
+    } else {
+      throw "Error - unrecognized widget type [" + this.children[i] + "] encountered in view definition";
+    }
+  }
+};
 
 // Represents an XHTML element
 xw.XHtml = function() {
@@ -1395,7 +1475,7 @@ xw.Text.prototype.render = function(container) {
 };
 
 xw.Text.prototype.renderText = function() {
-  if (!xw.Sys.isUndefined(this.text)) {
+  if (xw.Sys.isDefined(this.text)) {
     var expressions = this.text.match(xw.EL.regex());
     var renderedText;
     
@@ -1500,7 +1580,7 @@ xw.View.prototype.render = function(container) {
   
   this.renderChildren(this.container);
   
-  if (!xw.Sys.isUndefined(this.afterRender)) {
+  if (xw.Sys.isDefined(this.afterRender)) {
     this.afterRender.invoke();
   }
 };
@@ -1527,7 +1607,7 @@ xw.View.prototype.destroy = function() {
   xw.EL.destroyViewBindings(this);
 
   if (this.container != null) {
-    if (!xw.Sys.isUndefined(this.children)) {
+    if (xw.Sys.isDefined(this.children)) {
       this.destroyChildren(this.children);
     }
   }
@@ -1535,7 +1615,7 @@ xw.View.prototype.destroy = function() {
 
 xw.View.prototype.destroyChildren = function(children) {
   for (var i = 0; i < children.length; i++) {
-    if (!xw.Sys.isUndefined(children[i].children) && children[i].children.length > 0) {
+    if (xw.Sys.isDefined(children[i].children) && children[i].children.length > 0) {
       this.destroyChildren(children[i].children);
     }
     children[i].destroy();
@@ -1544,6 +1624,43 @@ xw.View.prototype.destroyChildren = function(children) {
 
 xw.View.prototype.toString = function() {
   return "xw.View [" + this.viewName + "]";
+};
+
+xw.DataModule = function(moduleName) {
+  xw.NonVisual(this);
+  this._className = "xw.DataModule";
+  this.moduleName = moduleName; 
+  this.registerEvent("afterOpen");
+  this._registeredWidgets = {};  
+  delete this.parent;
+};
+
+xw.DataModule.prototype = new xw.NonVisual();
+
+xw.DataModule.prototype.open = function() {
+  this.openChildren();
+  
+  if (xw.Sys.isDefined(this.afterOpen)) {
+    this.afterOpen.invoke();
+  }
+};
+
+// Registers a named (i.e. having an "id" property) widget
+xw.DataModule.prototype.registerWidget = function(widget) {
+  this._registeredWidgets[widget.id] = widget;
+};
+
+xw.DataModule.prototype.unregisterWidget = function(widget) {
+  for (var id in this._registeredWidgets) {
+    if (this._registeredWidgets[id] == widget) {
+      delete this._registeredWidgets[id];
+      break;
+    }
+  }
+};
+
+xw.DataModule.prototype.toString = function() {
+  return "xw.DataModule [" + this.moduleName + "]";
 };
 
 //
