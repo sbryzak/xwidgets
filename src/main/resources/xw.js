@@ -402,7 +402,7 @@ xw.EL.createBinding = function(widget, receiver, expr) {
     {widget: widget, propertyName: receiver, expression: expr} :
     {widget: widget, callback: receiver, expression: expr};
   xw.EL.bindings.push(binding);
-  xw.EL.eval(widget, expr);
+  return xw.EL.eval(widget, expr);
 };
 
 xw.EL.clearWidgetBindings = function(widget) {

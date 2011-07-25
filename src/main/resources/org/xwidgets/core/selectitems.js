@@ -37,7 +37,13 @@ org.xwidgets.core.SelectItems.prototype.resolve = function(name) {
 
 org.xwidgets.core.SelectItems.prototype.setValue = function(value) {
   if (xw.EL.isExpression(value)) {
-    xw.EL.createBinding(this, "value", value);
+    var v = xw.EL.createBinding(this, "value", value);
+    if (xw.Sys.isDefined(v)) {
+      this.value = v;
+      if (this.rendered) {
+        this.renderOptions();
+      }
+    }    
   } else {
     this.value = value;
     if (this.rendered) {
