@@ -172,6 +172,15 @@ xw.Sys.arrayContains = function(arrayVal, value) {
   return false;
 };
 
+//
+// Deletes the elements from an array that meet the specified condition
+//
+xw.Sys.deleteArrayElements = function(arr, condition) {
+  for (var i = arr.length - 1; i >= 0; i--) {
+    if (condition(arr[i])) arr.splice(i,1);
+  }
+};
+
 xw.Sys.trim = function(value) {
   return value.replace(/^\s+|\s+$/g,"");
 };
@@ -490,6 +499,40 @@ xw.EL.interpolate = function(widget, text) {
   }
   return replaced;
 };
+
+//
+// Event bus
+//
+xw.Event = {};
+
+xw.Event.observers = {};
+
+xw.Event.registerObserver = function(event, observer) {  
+  if (xw.Sys.isUndefined(observer.fire) || (typeof observer.fire !== "function")) {
+    alert("Error - could not register event observer [" + observer + "] for event [" + event + "] - " +
+      "observer does not define a fire() method");
+  }
+
+  if (xw.Sys.isUndefined(xw.Event.observers[event])) {
+    xw.Event.observers[event] = [];
+  }
+  xw.Event.observers[event].push(observer);
+};
+
+xw.Event.unregisterObserver = function(observer) {
+  var check = function(val) { return val == observer; };
+  for (var event in xw.Event.observers) {
+    xw.Sys.deleteArrayElements(xw.Event.observers[event], check);
+  }
+};
+
+xw.Event.fire = function(event, params) {
+  if (xw.Sys.isDefined(xw.Event.observers[event])) {
+    for (var i = 0; i < xw.Event.observers[event].length; i++) {
+      xw.Event.observers[event][i].fire(params);
+    }
+  }
+}
 
 //
 // A Map implementation
