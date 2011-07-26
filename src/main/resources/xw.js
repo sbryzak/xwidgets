@@ -349,8 +349,8 @@ xw.EL.bindings = [];
 // This is a function because some versions of some browsers cache the regex object,
 // so we need to create a new instance each time for cross-browser compatibility
 xw.EL.regex = function(expr) {  
-  return (typeof expr == "string") ? /#{([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/g.exec(expr) :
-    /#{([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/g;
+  return (typeof expr == "string") ? /#{(!?)([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/g.exec(expr) :
+    /#{(!?)([A-Za-z0-9]+(\.[A-Za-z0-9]+)*)}/g;
 };
 
 xw.EL.isExpression = function(expr) {
@@ -419,7 +419,8 @@ xw.EL.eval = function(widget, expr) {
     throw "Error evaluating EL - [" + expr + "] is an invalid expression.";
   }
 
-  var parts = e[1].split(".");
+  var invert = e[1] === "!";
+  var parts = e[2].split(".");
   var root = null;
         
   // First we walk up the component tree to see if the variable can be resolved within the widget's hierarchy
@@ -472,11 +473,11 @@ xw.EL.eval = function(widget, expr) {
   for (var i = 1; i < parts.length; i++) {
     value = value[parts[i]];
   }
-  return value;  
+  return invert ? !value : value;  
 };
 
 xw.EL.rootName = function(expr) {
-  return xw.EL.regex(expr)[1].split(".")[0];
+  return xw.EL.regex(expr)[2].split(".")[0];
 };
 
 xw.EL.interpolate = function(widget, text) {
