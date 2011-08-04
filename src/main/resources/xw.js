@@ -494,7 +494,7 @@ xw.EL.interpolate = function(widget, text) {
   var expressions = text.match(xw.EL.regex());
   if (expressions != null) {
     for (var i = 0; i < expressions.length; i++) {
-      replaced = text.replace(expressions[i], xw.EL.eval(widget, expressions[i]));
+      replaced = replaced.replace(expressions[i], xw.EL.eval(widget, expressions[i]));
     }
   }
   return replaced;
