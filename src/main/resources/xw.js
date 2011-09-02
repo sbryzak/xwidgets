@@ -284,6 +284,16 @@ xw.Sys.parseXml = function(body) {
 xw.Sys.setObjectProperty = function(obj, property, value) {
   // Check if the object has a setter method
   var setterName = "set" + xw.Sys.capitalize(property);
+  
+  // Do value conversion here if necessary, but ONLY if the value isn't an EL expression
+  if (!xw.EL.isExpression(value)) {
+    if (xw.Sys.isDefined(obj[property])) {
+      if (typeof obj[property] === "boolean" && typeof value !== "boolean") {
+         value = "true" === value;
+      }
+    }
+  }
+  
   if (xw.Sys.isDefined(obj, setterName) && typeof obj[setterName] === "function") {
     obj[setterName](value);
   } else {
@@ -1723,6 +1733,7 @@ xw.Popup = {};
 xw.Popup.windowClass = "xwPopupWindow";
 xw.Popup.titleClass = "xwPopupTitle";
 xw.Popup.closeButtonClass = "xwPopupCloseButton";
+xw.Popup.backgroundClass = "xwPopupBackground";
 
 //
 // Opens a view in a modal popup window
@@ -1731,9 +1742,14 @@ xw.openPopup = function(viewName, title, width, height) {
   var bg = document.createElement("div");
   bg.style.zIndex = "101";
   bg.style.backgroundColor = "#000000";
-  bg.style.filter = "alpha(opacity=25);"
+  if (xw.Popup.backgroundClass !== null) {
+    bg.className = xw.Popup.backgroundClass;
+  } 
+  
+  // Set transparency
+  bg.style.filter = "alpha(opacity=25);"  
   bg.style.MozOpacity = ".25";
-  bg.style.opacity = ".25";
+  bg.style.opacity = ".25";  
   bg.style.position = "fixed";
   bg.style.top = "0px";
   bg.style.left = "0px";

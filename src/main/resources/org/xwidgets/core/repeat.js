@@ -12,7 +12,7 @@ org.xwidgets.core.Repeat = function() {
   this._className = "org.xwidgets.core.Repeat";
   this.registerProperty("value", null); 
   this.registerProperty("var", null);
-  this.container = null;
+  this.control = null;
   this.currentItem = null;
   this.surrogates = null;
 };
@@ -20,11 +20,14 @@ org.xwidgets.core.Repeat = function() {
 org.xwidgets.core.Repeat.prototype = new xw.Visual();
   
 org.xwidgets.core.Repeat.prototype.render = function(container) {
-  this.container = container;
+  this.control = document.createElement("span");
+  container.appendChild(this.control);
   this.renderChildren();
 };
 
 org.xwidgets.core.Repeat.prototype.renderChildren = function() {
+  xw.Sys.clearChildren(this.control);
+
   if (this.value != null) {
     this.surrogates = [];  
 
@@ -39,7 +42,7 @@ org.xwidgets.core.Repeat.prototype.renderChildren = function() {
         var clone = this.children[j].clone(surrogate);
         surrogate.children.push(clone);
 
-        clone.render(this.container);
+        clone.render(this.control);
       }
     }
     
