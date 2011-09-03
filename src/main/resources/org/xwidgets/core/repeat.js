@@ -12,7 +12,7 @@ org.xwidgets.core.Repeat = function() {
   this._className = "org.xwidgets.core.Repeat";
   this.registerProperty("value", null); 
   this.registerProperty("var", null);
-  this.control = null;
+  this.control = document.createElement("span");
   this.currentItem = null;
   this.surrogates = null;
 };
@@ -20,7 +20,6 @@ org.xwidgets.core.Repeat = function() {
 org.xwidgets.core.Repeat.prototype = new xw.Visual();
   
 org.xwidgets.core.Repeat.prototype.render = function(container) {
-  this.control = document.createElement("span");
   container.appendChild(this.control);
   this.renderChildren();
 };
