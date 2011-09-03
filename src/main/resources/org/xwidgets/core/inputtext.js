@@ -15,12 +15,22 @@ org.xwidgets.core.InputText.prototype.render = function(container) {
     this.control = document.createElement("input");
     this.control.type = "text";
     this.control.className = this.styleClass;
+    if (this.value != null) {
+      this.control.value = this.value;
+    }
     container.appendChild(this.control);
   }    
 };
 
 org.xwidgets.core.InputText.prototype.getValue = function() {
   return this.control.value;
+};
+
+org.xwidgets.core.InputText.prototype.setValue = function(value) {
+  this.value = value;
+  if (this.control != null) {
+    this.control.value = this.value;
+  }
 };
 
 org.xwidgets.core.InputText.prototype.toString = function() {

@@ -888,10 +888,13 @@ xw.Controller.processQueue = function() {
     if (item.status === xw.Controller.QUEUE_STATUS_WIDGETS_LOADED) {          
       var def = xw.Controller.resourceDefs[item.resource];
       item.status = xw.Controller.QUEUE_STATUS_PROCESSED;
+      
+      var params = xw.Sys.isDefined(item.params) ? item.params : {};
+      
       if (def instanceof xw.ViewNode) {
-        xw.Controller.openView(item.resource, def, item.params, item.container);
+        xw.Controller.openView(item.resource, def, params, item.container);
       } else if (def instanceof xw.DataModuleNode) {
-        xw.Controller.openDataModule(item.resource, def, item.params);
+        xw.Controller.openDataModule(item.resource, def, params);
       }    
     }
   }  
@@ -980,14 +983,14 @@ xw.Controller.openView = function(viewName, definition, params, c) {
   // If anything else is remaining, clear it
   xw.Sys.clearChildren(container);
     
-  var view = new xw.View(viewName);
+  var view = new xw.View(viewName, params);
   xw.Controller.parseChildren(view, definition.children, view);
   xw.Controller.activeViews.push({container: container, view: view});
   view.render(container);
 };
 
 xw.Controller.openDataModule = function(dataModule, definition, params) {
-  var dm = new xw.DataModule(dataModule);
+  var dm = new xw.DataModule(dataModule, params);
   xw.Controller.parseChildren(dm, definition.children, dm);
   xw.Controller.activeDataModules.push(dm);
   dm.open();
@@ -1276,6 +1279,10 @@ xw.Action.prototype.invoke = function() {
     // required to set up script variables     
     var __registered = {};
     
+    // local variable, visible to our evaluated script -
+    // makes the view or data module params available
+    var params = this.getOwner().params;
+    
     // register variables for all widgets within the same view/data module with an id
     for (var id in this.getOwner()._registeredWidgets) {
       __registered[id] = this.getOwner()._registeredWidgets[id];
@@ -1286,6 +1293,7 @@ xw.Action.prototype.invoke = function() {
     // is no local overriding variable
     for (var i = 0; i < xw.Controller.activeDataModules.length; i++) {
       var dm = xw.Controller.activeDataModules[i];
+            
       for (var id in dm._registeredWidgets) {
         if (xw.Sys.isUndefined(__registered[id])) {
           __registered[id] = dm._registeredWidgets[id];
@@ -1598,10 +1606,11 @@ xw.Container.prototype.setLayout = function(layoutName) {
 //
 // A single instance of a view
 //
-xw.View = function(viewName) {   
+xw.View = function(viewName, params) {   
   xw.Container(this);
   this._className = "xw.View";
   this.viewName = viewName; 
+  this.params = params;
   this.registerEvent("afterRender");
   // The container control
   this.container = null;  
@@ -1680,10 +1689,11 @@ xw.View.prototype.toString = function() {
   return "xw.View [" + this.viewName + "]";
 };
 
-xw.DataModule = function(moduleName) {
+xw.DataModule = function(moduleName, params) {
   xw.NonVisual(this);
   this._className = "xw.DataModule";
   this.moduleName = moduleName; 
+  this.params = params;
   this.registerEvent("afterOpen");
   this._registeredWidgets = {};  
   delete this.parent;
@@ -1720,13 +1730,6 @@ xw.DataModule.prototype.toString = function() {
 //
 // GENERAL METHODS
 //
-
-//
-// Opens a resource (e.g. a view or data module) - this call is asynchronous
-//
-xw.open = function(viewName, params, container) {
-  xw.Controller.open(viewName, params, container);
-};
 
 // Define an object to hold popup window variables
 xw.Popup = {};
@@ -1829,4 +1832,11 @@ xw.closePopup = function() {
     document.body.removeChild(xw.Popup.background);
     xw.Popup.background = null;
   }
+};
+
+//
+// Opens a resource (e.g. a view or data module) - this call is asynchronous
+//
+xw.open = function(viewName, params, container) {
+  xw.Controller.open(viewName, params, container);
 };
