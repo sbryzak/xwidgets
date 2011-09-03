@@ -1039,7 +1039,7 @@ xw.Controller.parseChildren = function(owner, childNodes, parentWidget) {
       widget = new xw.Text();
       widget.setParent(parentWidget);
       widget.setOwner(owner);      
-      widget.text = c.text;
+      widget.value = c.text;
       widget.escape = c.escape;
       widgets.push(widget);
     }
@@ -1515,7 +1515,7 @@ xw.Text = function() {
   xw.Visual.call(this);
   this._className = "xw.Text";
   delete children;
-  this.registerProperty("text", "");
+  this.registerProperty("value", "");
   this.registerProperty("escape", true);
   this.control = null;  
 };
@@ -1529,18 +1529,18 @@ xw.Text.prototype.render = function(container) {
 };
 
 xw.Text.prototype.renderText = function() {
-  if (xw.Sys.isDefined(this.text)) {
-    var expressions = this.text.match(xw.EL.regex());
+  if (xw.Sys.isDefined(this.value)) {
+    var expressions = this.value.match(xw.EL.regex());
     var renderedText;
     
     if (expressions === null) {
-      renderedText = this.text;      
+      renderedText = this.value;      
     } else {
       for (var i = 0; i < expressions.length; i++) {
         // If any of the expressions are undefined, then break out early
         if (xw.Sys.isUndefined(xw.EL.eval(this, expressions[i]))) return;
       }
-      renderedText = xw.EL.interpolate(this, this.text);
+      renderedText = xw.EL.interpolate(this, this.value);
     }
     
     if (this.escape) {
@@ -1553,8 +1553,8 @@ xw.Text.prototype.renderText = function() {
   }
 };
 
-xw.Text.prototype.setText = function(value) {
-  this.text = value;
+xw.Text.prototype.setValue = function(value) {
+  this.value = value;
   
   xw.EL.clearWidgetBindings(this);
   
@@ -1569,7 +1569,7 @@ xw.Text.prototype.setText = function(value) {
 };
 
 xw.Text.prototype.toString = function() {
-  return "xw.Text[" + this.text + "]";
+  return "xw.Text[" + this.value + "]";
 };
 
 xw.Container = function() {
