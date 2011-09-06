@@ -501,10 +501,19 @@ xw.EL.rootName = function(expr) {
 
 xw.EL.interpolate = function(widget, text) {
   var replaced = text;
-  var expressions = text.match(xw.EL.regex());
-  if (expressions != null) {
-    for (var i = 0; i < expressions.length; i++) {
-      replaced = replaced.replace(expressions[i], xw.EL.eval(widget, expressions[i]));
+  
+  if (xw.Sys.isDefined(replaced) && replaced !== null) {
+    var expressions = text.match(xw.EL.regex());
+    if (expressions != null) {
+      for (var i = 0; i < expressions.length; i++) {
+        var val = xw.EL.eval(widget, expressions[i]);
+        if (xw.Sys.isUndefined(val)) {
+          val = "undefined"; 
+        } else if (val === null) {
+          val = "null";
+        }
+        replaced = replaced.replace(expressions[i], val);
+      }
     }
   }
   return replaced;
@@ -1537,26 +1546,28 @@ xw.Text.prototype.render = function(container) {
 };
 
 xw.Text.prototype.renderText = function() {
-  if (xw.Sys.isDefined(this.value)) {
-    var expressions = this.value.match(xw.EL.regex());
-    var renderedText;
-    
-    if (expressions === null) {
-      renderedText = this.value;      
-    } else {
-      for (var i = 0; i < expressions.length; i++) {
-        // If any of the expressions are undefined, then break out early
-        if (xw.Sys.isUndefined(xw.EL.eval(this, expressions[i]))) return;
+  if (this.control !== null) {
+    if (xw.Sys.isDefined(this.value) && this.value !== null) {
+      var expressions = this.value.match(xw.EL.regex());
+      var renderedText;
+      
+      if (expressions === null) {
+        renderedText = this.value;      
+      } else {
+        //for (var i = 0; i < expressions.length; i++) {
+          // If any of the expressions are undefined, then break out early
+          //if (xw.Sys.isUndefined(xw.EL.eval(this, expressions[i]))) return;
+        //}
+        renderedText = xw.EL.interpolate(this, this.value);
       }
-      renderedText = xw.EL.interpolate(this, this.value);
-    }
-    
-    if (this.escape) {
-      this.control.innerHTML = renderedText;
-    } else {
-      this.textNode = document.createTextNode();
-      this.control.appendChild(this.textNode);
-      this.textNode.nodeValue = renderedText;
+      
+      if (this.escape) {
+        this.control.innerHTML = renderedText;
+      } else {
+        this.textNode = document.createTextNode();
+        this.control.appendChild(this.textNode);
+        this.textNode.nodeValue = renderedText;
+      }
     }
   }
 };
