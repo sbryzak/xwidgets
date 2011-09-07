@@ -6,6 +6,7 @@ org.xwidgets.core.Tab = function() {
   this.container = null;
   this.registerProperty("name", null);
   this.registerProperty("enabled", true);
+  this.registerEvent("onActivate");
 };
 
 org.xwidgets.core.Tab.prototype = new xw.Visual();
@@ -61,7 +62,7 @@ org.xwidgets.core.TabPanel.prototype.setEnabled = function(idx, value) {
 };
 
 org.xwidgets.core.TabPanel.prototype.next = function() {
-  if (!xw.Sys.isUndefined(this.beforeScroll)) {
+  if (xw.Sys.isDefined(this.beforeScroll)) {
     this.beforeScroll.invoke(this);
   }
   
@@ -122,6 +123,10 @@ org.xwidgets.core.TabPanel.prototype.setActiveTab = function(idx) {
     this.activeTab.container.style.display = "none";
     tab.container.style.display = "block";
     this.activeTab = tab;
+    
+    if (xw.Sys.isDefined(this.activeTab.control.onActivate)) {
+      this.activeTab.control.onActivate.invoke(tab);
+    }
   }  
 };
 

@@ -660,8 +660,8 @@ xw.XHtmlNode = function(tagName, attributes, children) {
   this.children = children;
 };
 
-xw.TextNode = function(text) {
-  this.text = text; 
+xw.TextNode = function(attributes) {
+  this.attributes = attributes;
   this.escape = true;
 }
 
@@ -749,7 +749,7 @@ xw.DefinitionParser.prototype.parseChildNodes = function(children) {
             nodes.push(event);
           }
         } else if (e.namespaceURI === xw.CORE_NAMESPACE && e.localName === "text") {
-          var tn = new xw.TextNode(e.getAttribute("text"));
+          var tn = new xw.TextNode(this.getElementAttributes(e));
           tn.escape = (e.getAttribute("escape") !== "false");
           nodes.push(tn);
         } else {
@@ -760,7 +760,7 @@ xw.DefinitionParser.prototype.parseChildNodes = function(children) {
         var value = xw.Sys.trim(e.nodeValue);
         if (value.length > 0) {
           // We don't want to trim the actual value, as it may contain important space
-          nodes.push(new xw.TextNode(e.nodeValue));
+          nodes.push(new xw.TextNode({value:e.nodeValue}));
         }
       }
     }
@@ -898,7 +898,7 @@ xw.Controller.processQueue = function() {
       var def = xw.Controller.resourceDefs[item.resource];
       item.status = xw.Controller.QUEUE_STATUS_PROCESSED;
       
-      var params = xw.Sys.isDefined(item.params) ? item.params : {};
+      var params = (xw.Sys.isDefined(item.params) && item.params !== null) ? item.params : {};
       
       if (def instanceof xw.ViewNode) {
         xw.Controller.openView(item.resource, def, params, item.container);
@@ -1051,8 +1051,13 @@ xw.Controller.parseChildren = function(owner, childNodes, parentWidget) {
       widget = new xw.Text();
       widget.setParent(parentWidget);
       widget.setOwner(owner);      
-      widget.value = c.text;
       widget.escape = c.escape;
+      
+      // Set the widget's attributes
+      for (var p in c.attributes) { 
+        xw.Sys.setObjectProperty(widget, p, c.attributes[p]);
+      }
+            
       widgets.push(widget);
     }
   }
@@ -1554,10 +1559,6 @@ xw.Text.prototype.renderText = function() {
       if (expressions === null) {
         renderedText = this.value;      
       } else {
-        //for (var i = 0; i < expressions.length; i++) {
-          // If any of the expressions are undefined, then break out early
-          //if (xw.Sys.isUndefined(xw.EL.eval(this, expressions[i]))) return;
-        //}
         renderedText = xw.EL.interpolate(this, this.value);
       }
       
@@ -1580,7 +1581,9 @@ xw.Text.prototype.setValue = function(value) {
   var expressions = value.match(xw.EL.regex());
   if (expressions != null) {
     for (var i = 0; i < expressions.length; i++) {
-      xw.EL.createBinding(this, this.renderText, expressions[i]);  
+      var that = this;
+      var cb = function() { that.renderText(); };    
+      xw.EL.createBinding(this, cb, expressions[i]);  
     }
   }  
 
